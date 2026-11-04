@@ -1,0 +1,45 @@
+# OCR Worker — Cloudflare Workers (backend /ocr dan /edit)
+# Deploy HP-friendly: push repo ke GitHub, lalu
+# Cloudflare Dashboard > Workers & Pages > Create > Connect Git > pilih repo ini,
+# isi "Root directory" dengan: worker
+#
+# Worker ini TIDAK punya URL publik. Ia hanya dipanggil dari Pages lewat Service Binding
+# (Pages > Settings > Bindings > Service binding, Variable name: OCR_WORKER).
+#
+# Setelah deploy: Settings > Variables and Secrets > Add
+#   GEMINI_API_KEY  (Secret, wajib untuk provider gemini)
+#   AGNES_API_KEY   (Secret, wajib untuk provider agnes — https://platform.agnes-ai.com)
+#
+# JANGAN taruh API key di file ini. Key hanya lewat Secret di dashboard.
+
+name = "ocr-worker"
+main = "worker.js"
+compatibility_date = "2025-06-01"
+workers_dev = false   # tanpa URL *.workers.dev, hanya bisa dipanggil lewat Service Binding
+preview_urls = false  # matikan URL preview juga
+
+# nodejs_compat dihapus: worker.js hanya memakai API web standar (fetch, Headers,
+# Response, AbortController), jadi flag itu tidak diperlukan.
+
+[ai]
+binding = "AI"
+
+[vars]
+GEMINI_MODEL = "gemini-3.5-flash-lite"
+AGNES_MODEL = "agnes-3.0-flash"
+AGNES_BASE_URL = "https://apihub.agnes-ai.com/v1"
+CF_MODEL = "@cf/qwen/qwen3.8-27b"
+# Dengan Service Binding, Worker tidak bisa diakses langsung dari luar, jadi
+# ALLOWED_ORIGINS cukup dibiarkan kosong. Isi hanya jika kamu ingin membatasi
+# ke domain Pages tertentu, contoh: "https://ocr-studio.pages.dev"
+ALLOWED_ORIGINS = ""
+
+[observability]
+enabled = true
+
+# Opsional — kalau Gemini error "User location is not supported":
+# Google menilai lokasi dari datacenter Cloudflare yang mengeksekusi Worker
+# (BUKAN lokasi HP-mu). Smart Placement bisa memindahkan eksekusi ke colo lain.
+# Butuh Workers Paid; kalau deploy gagal, hapus blok ini lagi.
+# [placement]
+# mode = "smart"
