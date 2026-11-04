@@ -2,10 +2,11 @@
 
 ```
 ocr-studio/
-├── frontend/                  → proyek Cloudflare Pages
+├── functions/                 → Pages Functions (HARUS di root repo!)
+│   └── [[path]].js            (meneruskan /ocr, /edit, /health ke Worker via binding OCR_WORKER)
+├── frontend/                  → situs statis Cloudflare Pages
 │   ├── index.html
-│   ├── _routes.json           (Function hanya jalan untuk /ocr, /edit, /health)
-│   └── functions/[[path]].js  (meneruskan request ke Worker lewat binding OCR_WORKER)
+│   └── _routes.json           (Function hanya jalan untuk /ocr, /edit, /health)
 └── worker/                    → Cloudflare Worker (tanpa URL publik)
     ├── worker.js              (/ocr dan /edit)
     └── wrangler.toml
@@ -21,8 +22,10 @@ ocr-studio/
    - Setelah deploy: Settings → Variables and Secrets → tambah secret
      `GEMINI_API_KEY` dan/atau `AGNES_API_KEY`.
 3. **Deploy Pages.** Workers & Pages → Create → Pages → Connect to Git.
-   - Root directory: `frontend`
-   - Build command: kosongkan. Build output directory: `/`
+   - Root directory: **kosong** (jangan diisi!)
+   - Build command: kosongkan. Build output directory: `frontend`
+   - Cloudflare otomatis mendeteksi folder `functions/` di root repo; kalau Function
+     tidak aktif, jalankan Retry deployment lalu cek menu Functions (harusnya tidak kosong).
 4. **Pasang Service Binding.** Pages → Settings → Bindings → Add → Service binding
    - Variable name: `OCR_WORKER`
    - Service: `ocr-worker`
@@ -30,6 +33,11 @@ ocr-studio/
 5. Buka domain `*.pages.dev`. Tab **OCR** dan **Editor TL** sudah terhubung ke Worker.
 
 ## Catatan
+- Bila OCR sampai error **"Respons server bukan JSON"** padahal binding sudah dipasang: hampir
+  pasti Pages Functions tidak ikut ter-deploy. Tes cepat: buka `https://<domain>/health` — bila
+  yang muncul situs (HTML), bukan `{"ok":true,...}`, berarti Function-nya belum aktif. Solusi:
+  pastikan `functions/` ada di **root repo** dan Build output directory = `frontend`
+  (bukan `/`), lalu Retry deployment.
 - Frontend memanggil `/ocr` dan `/edit` (path relatif). `WORKER_URL` di index.html sengaja kosong.
 - Worker memakai `workers_dev = false`, jadi tidak bisa dipanggil langsung dari luar.
 - **Dark mode**: tampilan ikut sistem, plus tombol tema di header (siklus: ikuti sistem → terang → gelap; pilihan tersimpan di localStorage).
