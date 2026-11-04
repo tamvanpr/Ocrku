@@ -4,18 +4,45 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#f6f5f2" />
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6f5f2" />
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#151412" />
+<script>
+/* Tema diterapkan sebelum render pertama agar tidak ada kilatan putih saat dark mode aktif */
+try{
+  var _t=localStorage.getItem('ocr_theme')||'auto';
+  var _dark=_t==='dark'||(_t==='auto'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+  if(_dark)document.documentElement.dataset.theme='dark';
+}catch(e){}
+</script>
 <title>OCR Studio</title>
 <style>
 :root{
+  color-scheme:light dark;
   --bg:#f6f5f2; --surface:#ffffff; --surface-2:#f0eee9; --line:#e4e1d9; --line-strong:#cfcbc0;
   --ink:#1c1b19; --ink-2:#55524b; --ink-3:#8a867c;
-  --accent:#0f6b63; --accent-hover:#0b5750; --accent-soft:#e3f0ee;
-  --user:#e9eef5; --user-line:#cfdaea;
-  --danger:#b3261e; --danger-soft:#fbeceb; --danger-line:#f0cfcc;
+  --accent:#0f6b63; --accent-hover:#0b5750; --accent-soft:#e3f0ee; --on-accent:#ffffff;
+  --user:#e9eef5; --user-line:#cfdaea; --user-ink:#33475f;
+  --danger:#b3261e; --danger-hover:#8f1d17; --danger-soft:#fbeceb; --danger-line:#f0cfcc;
+  --on-ink:#ffffff; --toast-bg:#1c1b19; --toast-ink:#ffffff;
+  --overlay:rgba(28,27,25,.45); --app-shadow:0 1px 2px rgba(28,27,25,.04),0 8px 30px rgba(28,27,25,.05);
+  --badge-warn-bg:#fff3d6; --badge-warn-ink:#7a5200; --diff-orig:#fff6dc;
   --radius:14px; --radius-sm:9px;
   --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
   --mono:ui-monospace,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace;
 }
+/* ---------- dark mode: data-theme diatur JS (ikuti sistem → terang → gelap) ---------- */
+html[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#151412; --surface:#1d1c19; --surface-2:#26241f; --line:#2d2b27; --line-strong:#423f38;
+  --ink:#edeae2; --ink-2:#b5b0a5; --ink-3:#8c867b;
+  --accent:#43c7b1; --accent-hover:#5ad6c2; --accent-soft:#12322d; --on-accent:#0c211d;
+  --user:#242f3d; --user-line:#3a4759; --user-ink:#ccd9ec;
+  --danger:#f0948c; --danger-hover:#f5a9a1; --danger-soft:#3c211e; --danger-line:#5e2d28;
+  --on-ink:#171614; --toast-bg:#ece9e2; --toast-ink:#171614;
+  --overlay:rgba(0,0,0,.6); --app-shadow:0 1px 2px rgba(0,0,0,.35),0 10px 32px rgba(0,0,0,.45);
+  --badge-warn-bg:#3a2e11; --badge-warn-ink:#e6c26a; --diff-orig:#352b10;
+}
+::selection{background:var(--accent-soft)}
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%}
 body{background:var(--bg);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased;
@@ -25,12 +52,12 @@ button,select{font-family:inherit}
 button:focus:not(:focus-visible){outline:none}
 
 .app{width:100%;max-width:820px;height:100%;max-height:940px;background:var(--surface);border:1px solid var(--line);
-  border-radius:20px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 1px 2px rgba(28,27,25,.04),0 8px 30px rgba(28,27,25,.05)}
+  border-radius:20px;display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--app-shadow)}
 
 /* ---------- header ---------- */
 .header{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line);background:var(--surface);flex-shrink:0}
 .brand{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
-.logo{width:30px;height:30px;border-radius:9px;background:var(--ink);color:#fff;display:grid;place-items:center;flex-shrink:0}
+.logo{width:30px;height:30px;border-radius:9px;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;flex-shrink:0}
 .logo svg{width:16px;height:16px}
 .brand-text{min-width:0}
 .brand-text h1{font-size:15px;font-weight:650;letter-spacing:-.01em;line-height:1.2}
@@ -63,8 +90,8 @@ button:focus:not(:focus-visible){outline:none}
 .msg.user{align-self:flex-end;flex-direction:row-reverse}
 .msg.assistant{align-self:flex-start;width:90%}
 .avatar{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:10px;font-weight:650;flex-shrink:0;user-select:none;margin-top:1px}
-.msg.assistant .avatar{background:var(--ink);color:#fff}
-.msg.user .avatar{background:var(--user);color:#33475f;border:1px solid var(--user-line)}
+.msg.assistant .avatar{background:var(--ink);color:var(--on-ink)}
+.msg.user .avatar{background:var(--user);color:var(--user-ink);border:1px solid var(--user-line)}
 .bubble{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;line-height:1.5;font-size:13.5px;min-width:0;max-width:100%;word-break:break-word;flex:1}
 .msg.user .bubble{background:var(--user);border-color:var(--user-line);flex:0 1 auto}
 .bubble img.pic{width:44px;height:44px;object-fit:cover;border-radius:var(--radius-sm);display:block;border:1px solid var(--line);background:var(--surface-2);flex-shrink:0}
@@ -84,7 +111,7 @@ button:focus:not(:focus-visible){outline:none}
 .btn:hover{background:var(--surface-2)}
 .btn:active{transform:scale(.97)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .btn.primary:hover:not(:disabled){background:var(--accent-hover)}
 .btn svg{width:13px;height:13px}
 .btn.hidden{display:none}
@@ -114,7 +141,7 @@ button:focus:not(:focus-visible){outline:none}
 .file-remove:hover{background:var(--surface-2);color:var(--danger)}
 .file-remove svg{width:14px;height:14px}
 .file-indicator.filled .file-remove{display:grid}
-.send-btn{width:40px;height:40px;border-radius:50%;border:none;background:var(--accent);color:#fff;display:grid;place-items:center;cursor:pointer;flex-shrink:0;transition:background .15s,transform .05s}
+.send-btn{width:40px;height:40px;border-radius:50%;border:none;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;cursor:pointer;flex-shrink:0;transition:background .15s,transform .05s}
 .send-btn:hover{background:var(--accent-hover)}
 .send-btn:active{transform:scale(.94)}
 .send-btn.stop{background:var(--danger)}
@@ -124,7 +151,7 @@ button:focus:not(:focus-visible){outline:none}
 .progress > i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
 
 /* ---------- modal ---------- */
-.overlay{position:fixed;inset:0;background:rgba(28,27,25,.45);display:none;justify-content:center;align-items:center;z-index:1000;padding:20px}
+.overlay{position:fixed;inset:0;background:var(--overlay);display:none;justify-content:center;align-items:center;z-index:1000;padding:20px}
 .overlay.active{display:flex}
 .modal{background:var(--surface);border-radius:18px;padding:24px;width:100%;max-width:440px;max-height:88dvh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);animation:rise .18s ease-out}
 .modal h3{font-size:17px;font-weight:650;letter-spacing:-.01em;margin-bottom:4px}
@@ -137,7 +164,7 @@ button:focus:not(:focus-visible){outline:none}
 .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
 .modal .btn{height:38px;padding:0 20px}
 
-.toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,14px);background:var(--ink);color:#fff;font-size:13px;padding:10px 18px;border-radius:999px;
+.toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,14px);background:var(--toast-bg);color:var(--toast-ink);font-size:13px;padding:10px 18px;border-radius:999px;
   opacity:0;transition:.22s;z-index:2000;pointer-events:none;max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
@@ -177,15 +204,15 @@ button:focus:not(:focus-visible){outline:none}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px;flex-shrink:0}
 .card h2{font-size:13.5px;font-weight:650;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .badge{font-size:11px;font-weight:600;background:var(--surface-2);color:var(--ink-2);border-radius:999px;padding:1px 9px}
-.badge.warn{background:#fff3d6;color:#7a5200}
+.badge.warn{background:var(--badge-warn-bg);color:var(--badge-warn-ink)}
 .ed-input{width:100%;min-height:170px;max-height:42vh;resize:vertical;font-family:var(--mono);font-size:12.5px;line-height:1.6;padding:10px 12px;
   border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface-2);color:var(--ink);tab-size:2;white-space:pre;overflow:auto}
 .ed-input:focus{outline:2px solid var(--accent);outline-offset:1px}
 .ed-status{font-size:12.5px;color:var(--ink-2);line-height:1.5;margin-top:8px}
 .ed-status.error{color:var(--danger)}
 .ed-status.ok{color:var(--accent)}
-.btn.danger{background:var(--danger);border-color:var(--danger);color:#fff}
-.btn.danger:hover:not(:disabled){background:#8f1d17}
+.btn.danger{background:var(--danger);border-color:var(--danger);color:var(--on-accent)}
+.btn.danger:hover:not(:disabled){background:var(--danger-hover)}
 .list-scroll{max-height:380px;overflow-y:auto}
 .diff{border-top:1px solid var(--line);padding:10px 0;font-size:12.5px;line-height:1.55}
 .diff:first-child{border-top:none;padding-top:2px}
@@ -194,7 +221,7 @@ button:focus:not(:focus-visible){outline:none}
 .diff .tx{font-family:var(--mono);white-space:pre-wrap;word-break:break-word;border-radius:7px;padding:6px 9px;margin:2px 0 4px;font-size:12px}
 .diff .tx.before{background:var(--danger-soft)}
 .diff .tx.after{background:var(--accent-soft)}
-.diff .tx.orig{background:#fff6dc}
+.diff .tx.orig{background:var(--diff-orig)}
 .diff .why{color:var(--ink-2)}
 .empty-note{font-size:13px;color:var(--ink-3)}
 @media(max-width:560px){
@@ -224,6 +251,7 @@ button:focus:not(:focus-visible){outline:none}
           <option value="cloudflare">Cloudflare AI</option>
         </select>
       </div>
+      <button class="icon-btn" id="themeBtn" type="button" aria-label="Ganti tema" title="Ganti tema"></button>
       <button class="icon-btn" id="settingsBtn" type="button" aria-label="Pengaturan model" title="Pengaturan model">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="7" r="2.2" fill="var(--surface)"/><circle cx="15" cy="17" r="2.2" fill="var(--surface)"/></svg>
       </button>
@@ -241,7 +269,7 @@ button:focus:not(:focus-visible){outline:none}
   <main class="chat" id="chat" aria-live="polite">
     <div class="empty" id="emptyState">
       <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg></div>
-      <p>Pilih, seret, atau tempel gambar halaman komik</p>
+      <p>Pilih, seret, atau tempel gambar halaman komik — bisa banyak halaman sekaligus</p>
     </div>
   </main>
 
@@ -371,6 +399,8 @@ const ICON = {
   copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>',
   down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14"/></svg>',
   retry:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"/></svg>',
+  sun:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.3 11.3 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+  moon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
 };
 
 const $=(id)=>document.getElementById(id);
@@ -400,6 +430,28 @@ function refreshHome(){
   modelCaption.textContent=activeModel();
 }
 providerSelect.addEventListener('change',()=>{provider=providerSelect.value;settings.provider=provider;saveSettings();refreshHome();});
+
+/* ---------- tema: ikuti sistem → terang → gelap (tersimpan di localStorage) ---------- */
+const THEME_KEY='ocr_theme', THEME_ORDER=['auto','light','dark'];
+const THEME_LABEL={auto:'ikut sistem',light:'terang',dark:'gelap'};
+const THEME_COLOR={light:'#f6f5f2',dark:'#151412'};
+const THEME_META=document.querySelector('meta[name="theme-color"]');
+const themeMql=window.matchMedia?matchMedia('(prefers-color-scheme: dark)'):null;
+function themeChoice(){try{const t=localStorage.getItem(THEME_KEY);return THEME_ORDER.includes(t)?t:'auto';}catch{return 'auto';}}
+function applyTheme(){
+  const c=themeChoice(),dark=c==='dark'||(c==='auto'&&themeMql&&themeMql.matches);
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  const b=$('themeBtn');
+  if(b){b.innerHTML=dark?ICON.sun:ICON.moon;b.title='Tema: '+THEME_LABEL[c];b.setAttribute('aria-label','Tema: '+THEME_LABEL[c]);}
+  if(THEME_META)THEME_META.setAttribute('content',dark?THEME_COLOR.dark:THEME_COLOR.light);
+}
+$('themeBtn').onclick=()=>{
+  const next=THEME_ORDER[(THEME_ORDER.indexOf(themeChoice())+1)%THEME_ORDER.length];
+  try{localStorage.setItem(THEME_KEY,next);}catch{}
+  applyTheme();showToast('Tema: '+THEME_LABEL[next]);
+};
+if(themeMql&&themeMql.addEventListener)themeMql.addEventListener('change',()=>{if(themeChoice()==='auto')applyTheme();});
+applyTheme();
 
 /* ---------- toast ---------- */
 let toastT=null;
@@ -626,6 +678,32 @@ function fallbackCopy(text,done){ // untuk http / browser lama
     const ok=document.execCommand('copy');ta.remove();ok?done():showToast('Gagal menyalin');}
   catch{showToast('Gagal menyalin');}
 }
+
+/* ---------- bersih-bersih sisa markdown model (prefix OCR dijaga) ----------
+   Tier-1 pembersihan terjadi di worker (normalizeOutput). Fungsi ini lapis ke-2:
+   melindungi tampilan & riwayat lama yang masih menyimpan artefak markdown.
+   Prefix OCR ("() ", "[] ", "<> ", "* ", "Sfx ", "# ") TIDAK pernah diubah. */
+const TIDY_PREFIX=/^(\(\)|\[\]|<>|\*|Sfx|#) /;
+function tidyOcrText(t){
+  if(!t)return '';
+  return t.split('\n').map(l=>{
+    let s=l.trim();
+    if(!s)return '';
+    if(/^-{3,}$|^_{3,}$|^\*{3,}$|^={3,}$/.test(s))return '';      // horizontal rule
+    s=s.replace(/^#{1,6}\s+/,'# ');                               // ## heading → prefix #
+    const pre=TIDY_PREFIX.test(s);
+    if(!pre){
+      s=s.replace(/^>+\s?/,'')                                    // blockquote
+         .replace(/^[-•]\s+/,'')                                  // bullet
+         .replace(/\*([^*\n]+)\*(?!\*)/g,'$1');                   // *italic* sisa
+    }
+    s=s.replace(/(\*\*+|__+)([\s\S]+?)\1/g,'$2')                  // **bold**
+       .replace(/`([^`]*)`/g,'$1')                               // `code`
+       .replace(/~~(.+?)~~/g,'$1')                               // ~~strike~~
+       .replace(/\\([#*_<>\[\]])/g,'$1');                        // \# \* → polos
+    return s;
+  }).filter(Boolean).join('\n');
+}
 function downloadText(text,prefix){
   const blob=new Blob([text],{type:'text/plain;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
@@ -665,7 +743,8 @@ function renderRestored(j){
   const p=PROVIDERS[j.p]?j.p:'gemini';
   const d=addAI(p,j.mid||PROVIDERS[p].def,j.thumb||'',j.hash||'????????','',{restored:true,time:j.time});
   const out=d.querySelector('.ocr-result');
-  out.classList.remove('busy');out.textContent=j.text;out.dataset.full=j.text;
+  const restored=tidyOcrText(j.text);
+  out.classList.remove('busy');out.textContent=restored;out.dataset.full=restored;
   const btns=d.querySelectorAll('.btn');
   if(btns[0])btns[0].classList.remove('hidden');
   if(btns[1])btns[1].classList.remove('hidden');
@@ -727,7 +806,8 @@ async function runOCR(d){
       if(reqId&&data.reqId&&data.reqId!==reqId)throw new Error('Respons tertukar (reqId tidak cocok). Coba Ulangi.');
       if(hash&&data.imgHash&&data.imgHash!==hash)throw new Error('Respons tertukar (hash gambar tidak cocok). Coba Ulangi.');
     }
-    const text=(data.text||'').trim()||'# TIDAK ADA TEKS YANG TERDETEKSI';
+    const cleaned=tidyOcrText((data.text||'').trim()).replace(/^# NO TEXT DETECTED$/,'# TIDAK ADA TEKS YANG TERDETEKSI');
+    const text=cleaned.trim()||'# TIDAK ADA TEKS YANG TERDETEKSI';
     await typeInto(out,text);
     meta.textContent=metaText(p,mid,hash,[pg,text.length+' karakter'].filter(Boolean).join(' · '));
     btns[0].classList.remove('hidden');btns[1].classList.remove('hidden');

@@ -45,28 +45,29 @@ const CF_VISION_MODELS = [
 const CF_MODELS = new Set(CF_VISION_MODELS);
 const DEFAULT_CF_MODEL = '@cf/qwen/qwen3.8-27b';
 
-// ================= SYSTEM PROMPT v3 =================
-// Prinsip: pendek tapi tegas, urutan baca eksplisit, prefix anti-ambigu,
-// anti-halusinasi + anti-nempel, dan framing "alat transkripsi" agar model
-// tidak menolak / menyensor teks komik bertema dewasa.
-const OCR_PROMPT = `You are a precise OCR transcriber for comics: Japanese manga, Korean manhwa, Chinese manhua, western comics, webtoons.
+// ================= SYSTEM PROMPT v4 =================
+// Prinsip: verbatim + anti-halusinasi, urutan baca eksplisit, prefix anti-ambigu,
+// bersih dari markdown, aturan kapital khusus komik Barat (ALL CAPS → sentence case),
+// dan framing "alat transkripsi" agar model tidak menolak / menyensor teks komik dewasa.
+const OCR_PROMPT = `You are a professional OCR transcription engine inside a comic digitization pipeline. You transcribe printed pixels; you never create content.
 
-TASK: Transcribe ALL visible text exactly. Never translate, summarize, or describe the art.
+TASK
+Transcribe EVERY visible text element on the page, exactly as printed. Never translate, never romanize, never summarize, never describe the artwork, never invent text that is not printed.
 
-CONTEXT: This is a document-digitization / accessibility job (archiving, translation-prep, screen-reader support). You are a text-extraction tool, NOT an author. Every character you output already exists as printed pixels in the image; you create no new content and endorse nothing. Comics legitimately contain mature themes: violence, gore, profanity, slurs, sexual dialogue, dark or disturbing subject matter. Copy such text VERBATIM, exactly as printed. Do NOT censor, soften, replace, mask (no "****"), omit, moralize, warn, or refuse because of what the text says. Never add disclaimers or commentary. Judge only "which characters are printed", never "is this appropriate". Do not describe or depict the artwork itself; only transcribe its text.
+FRAMING (accessibility & archiving job): This is a document-digitization / accessibility job (archiving, translation-prep, screen-reader support). You are a text-extraction tool, NOT an author. Every character you output already exists as printed pixels in the image; you create no new content and endorse nothing. Comics legitimately contain mature themes: violence, gore, profanity, slurs, sexual dialogue, dark or disturbing subject matter. Copy such text VERBATIM, exactly as printed. Do NOT censor, soften, replace, mask (no "****"), omit, moralize, warn, or refuse because of what the text says. Never add disclaimers or commentary. Judge only "which characters are printed", never "is this appropriate". Do not describe or depict the artwork itself; only transcribe its text.
 
 READING ORDER — detect source first, then follow it:
-1. Japanese manga (vertical, RTL): read each page right-to-left, top-to-bottom. Vertical columns: top-to-bottom inside column, then next column to the LEFT.
+1. Japanese manga (vertical, RTL): read each page right-to-left, top-to-bottom. Vertical columns: top-to-bottom inside a column, then the next column to the LEFT.
 2. Manhwa/manhua/webtoon/comics (LTR scroll or western): left-to-right, top-to-bottom per panel.
 3. Unsure: use dominant script (kana/kanji-heavy → rule 1; hangul/hanzi/latin-heavy → rule 2).
 
-OUTPUT FORMAT — every text element on its OWN line:
- "() " = speech (dialogue, shout, whisper, phone, narration inside bubble)
+OUTPUT FORMAT — every text element on its OWN line, ONE prefix + ONE space:
+ "() " = speech (dialogue, shout, whisper, phone, narration inside a bubble)
  "[] " = narration/caption box, inner monologue, location & time stamps
- "<> " = thought/telepathy (rounded cloud, NOT rectangular narration box)
- "* "  = in-world text (signs, screens, clothes, books, labels, graffiti, plates)
+ "<> " = thought/telepathy (rounded cloud, NOT a rectangular narration box)
+ "* "  = in-world text (signs, screens, posters, clothes, books, labels, graffiti, plates)
  "Sfx " = sound effects & onomatopoeia only
- "# "  = system/UI/meta (game windows, quests, level-up, items, skills, HUD, chapter titles, credits, translator/editor notes, page numbers)
+ "# "  = system/UI/meta (game windows, quests, level-up, items, skills, HUD, chapter titles, credits, translator/editor notes, printed page numbers)
 Example:
 () Hey... are you sure?
 [] Three days later.
@@ -75,18 +76,28 @@ Sfx BOOM
 * DANGER: HIGH VOLTAGE
 # CHAPTER 12
 
-STRICT RULES:
-- One prefix per line, one space after prefix. NEVER put two prefixed items on one line. No blank lines.
-- NEVER use markdown formatting: no \`\`\` code fences, no ## headings, no **bold**, no *italic*, no bullet lists, no > quotes, no --- rules. The characters # and * at line start are OCR prefixes, NOT markdown — output them literally as "# " and "* ".
-- One bubble/box = merge its internal wrapped lines into ONE line. NEVER merge across bubbles, speakers, or prefixes. A continued sentence across 2 bubbles stays 2 lines.
-- Transcribe original script only. Keep kanji/hiragana/katakana, hangul, hanzi (simplified/traditional as-is), full-width punctuation 。、！？…ー々★♪♡, ALL-CAPS and !!! as printed.
-- Vertical Japanese: output as horizontal line. Ignore furigana/ruby (transcribe base characters only). Keep prolonged sound mark ー.
-- If stylized title art overlaps dialogue: foreground legible text first, then background title only if fully legible, each with correct prefix.
-- Partially covered but inferable from grammar/context: write inferred form with NO marker.
-- Truly illegible characters: [...] for that span only, e.g. () sore wa hon[...] da. Fully illegible bubble: () [...].
-- Zero text in image: output exactly: # NO TEXT DETECTED`;
+CASING — English/Latin-script comics:
+Western comics usually print dialogue in ALL CAPS. For lines with the (), [], <> prefixes, output normal sentence case instead: capitalize the first word of each line, the pronoun I, proper nouns, and acronyms/initialisms (FBI, NASA); everything else follows standard lowercase rules. Keep AS PRINTED (do not re-case): Sfx lines, # UI/status lines, * sign text, single letters, and abbreviations. Other scripts (kanji/kana/hangul/hanzi) are never re-cased. This is the ONLY allowed deviation from verbatim copying: it changes letter case only — never wording, spelling, or punctuation.
 
-const SYSTEM_SHORT = 'You are an OCR text-extraction tool. Output only the transcribed lines in the required prefix format. Copy printed text verbatim, including mature or offensive wording, without censoring, refusing, or adding commentary.';
+STRICT RULES:
+- One prefix per line, one space after prefix. NEVER put two prefixed items on one line. No blank lines. Never number or bullet the lines yourself.
+- NEVER use markdown formatting: no \`\`\` code fences, no ## headings, no **bold**, no *italic*, no bullet lists, no > quotes, no tables, no --- rules. The characters # and * at line start are OCR prefixes, NOT markdown — output them literally as "# " and "* ".
+- One bubble/box = merge its internal wrapped lines into ONE line (join with single spaces). NEVER merge across bubbles, boxes, speakers, or prefixes. A sentence continued across 2 bubbles stays 2 lines.
+- Output the original language/script only. Keep kanji/hiragana/katakana, hangul, hanzi (simplified/traditional as-is), full-width punctuation 。、！？…ー々★♪♡, closing quotes 」』"”, ALL punctuation (! / !!! / ? / …) and digits exactly as printed. If the printed word is misspelled, copy the misspelling.
+- Vertical Japanese: output as horizontal line. Ignore furigana/ruby (transcribe base characters only). Keep the prolonged sound mark ー.
+- Two languages printed together in one panel (e.g. speech plus a small printed subtitle): two lines, in printed order, each with its own prefix.
+
+QUALITY LADDER — decide per element:
+- Fully legible → transcribe it (respect prefix + casing rules).
+- Small, background, rotated, or stylized but still readable → it IS text; include it with the right prefix (Sfx if it is a sound).
+- Partially covered but clear from grammar/context → write the intended form with NO marker.
+- Honestly unreadable span mid-sentence → [...] for that span only, e.g. () sore wa hon[...] da. Whole unreadable bubble → () [...].
+- Cannot tell whether something is text or art (sparks, streaks, debris, hatching) → if no letters are recognizable, it is NOT text: skip silently. NEVER invent dialogue, names, or sound effects.
+- Same text in different bubbles → transcribe each occurrence. One watermark/logo/identical repeated sfx on the same page → output once.
+- Stylized title art overlapping dialogue → foreground legible dialogue first; then background title only if fully legible, each with its correct prefix.
+- Zero text on the page → output exactly: # NO TEXT DETECTED`;
+
+const SYSTEM_SHORT = 'You are an OCR text-extraction tool for comics. Output ONLY the transcribed lines in the required prefix format from the user message — one line per text element, no commentary, no markdown, no translation. Copy printed text verbatim, including mature or offensive wording, without censoring or refusing. Apply the user-message casing rule: Latin-script dialogue goes to sentence case; keep Sfx/#/* lines as printed.';
 
 export default {
   async fetch(request, env) {
@@ -446,7 +457,13 @@ function normalizeOutput(text) {
     const startsWithPrefix = PREFIX_AT_START.test(l);
     l = l.replace(/\*\*(.+?)\*\*/g, '$1');                 // **bold**
     l = l.replace(/__(.+?)__/g, '$1');                     // __bold__
-    if (!startsWithPrefix) l = l.replace(/^[-•]\s+/, '');  // bullet list (bukan prefix)
+    l = l.replace(/`([^`]*)`/g, '$1');                     // `inline code`
+    l = l.replace(/~~(.+?)~~/g, '$1');                     // ~~strike~~
+    if (!startsWithPrefix) {
+      l = l.replace(/^[-•]\s+/, '');                       // bullet list (bukan prefix)
+      l = l.replace(/\*([^*\n]+)\*(?!\*)/g, '$1');         // *italic* sisa (prefix "*" tidak tersentuh)
+    }
+    l = l.replace(/\\([#*_<>\[\]])/g, '$1');               // \# \* dst → karakter polos
     // spasi ganda setelah prefix
     l = l.replace(/^(\(\)|\[\]|<>|\*|Sfx|#)\s{2,}/, '$1 ');
     if (l) cleaned.push(l);
@@ -827,6 +844,8 @@ B. Penanda teks
 Pertahankan seluruh penanda berikut sesuai file asli:
 
 - "-" : Dialog.
+- "()" : Balon dialog / speech.
+- "Sfx" : Efek suara / onomatopoeia.
 - "[]" : Kotak dialog.
 - "#" : Sistem atau status window.
 - "*" : Tulisan di luar balon.
@@ -1042,8 +1061,11 @@ Kamu HANYA mengembalikan SATU objek JSON, tanpa code fence, tanpa markdown, tanp
 
 Aturan format:
 - "changes" hanya berisi baris yang BENAR-BENAR kamu ubah. Baris yang sudah bagus jangan disertakan.
-- "after" adalah isi baris utuh seperti di file: tulis ulang penanda di awal baris (-, [], #, *, **, //, <>) dan indentasinya persis seperti aslinya, tanpa awalan "N| ". Satu baris tetap satu baris (tanpa karakter baris baru).
+- "after" adalah isi baris utuh seperti di file: tulis ulang penanda di awal baris (-, (), [], #, *, **, //, <>, Sfx) dan indentasinya persis seperti aslinya, tanpa awalan "N| ". Satu baris tetap satu baris (tanpa karakter baris baru).
 - Baris nomor halaman (P1, P2, ...), baris Note/Catatan TL/TN, serta angka, durasi, biaya, dan statistik di status window tidak boleh diubah.
+- Penggantian kata ganti (aku/kamu/saya/gue/lo/dll.) tidak diperbolehkan. Jangan menerjemahkan istilah Inggris, dan jangan mengubah huruf besar-kecil pada nama/istilah Inggris.
+- Jangan menambah elipsis, tanda baca, atau kata sapaan baru yang tidak ada di baris asli, dan jangan mengubah tanda baca penutup (… / ... / ? / !).
+- Untuk nama karakter, skill, atau istilah yang sama muncul berkali-kali, gunakan penulisan yang konsisten dengan KONTEKS SEBELUMNYA.
 - "reason" ditulis ringkas dalam bahasa Indonesia, misalnya: Memperbaiki typo "rotme" menjadi "ritme" dan membuat susunan kalimat lebih natural.
 - "review" hanya untuk bagian yang benar-benar butuh keputusan pengguna (kata tidak jelas dengan beberapa kemungkinan arti, atau makna tidak bisa dipastikan). Untuk baris itu, JANGAN ubah teksnya. Jangan masukkan typo yang sudah jelas dan sudah kamu perbaiki.
 - Bagian "KONTEKS SEBELUMNYA" hanya untuk menjaga konsistensi nama, istilah, kata ganti, dan nada. Jangan disunting dan jangan dimasukkan ke jawaban.

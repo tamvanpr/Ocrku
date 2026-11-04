@@ -32,6 +32,10 @@ ocr-studio/
 ## Catatan
 - Frontend memanggil `/ocr` dan `/edit` (path relatif). `WORKER_URL` di index.html sengaja kosong.
 - Worker memakai `workers_dev = false`, jadi tidak bisa dipanggil langsung dari luar.
+- **Dark mode**: tampilan ikut sistem, plus tombol tema di header (siklus: ikuti sistem → terang → gelap; pilihan tersimpan di localStorage).
+- **Multi-gambar**: pilih/seret/tempel hingga 20 halaman sekaligus. Tiap halaman diproses berurutan (ada progres + tombol Hentikan, tombol Ulangi per halaman), lalu dibuat kartu gabungan satu chapter (Salin/Unduh chapter).
+- **Anti-markdown**: sisa markdown dari model (code fence, **bold**, bullet, heading) dibersihkan otomatis di worker dan sekali lagi di frontend; prefix OCR `()`, `[]`, `<>`, `*`, `Sfx`, `#` tidak pernah ikut terhapus.
+- **Kapital komik Barat**: dialog/narasi/monolog ber-alfabet yang dicetak ALL CAPS dikembalikan dalam sentence case sesuai aturan penulisan; `Sfx`, teks sistem `#`, dan tulisan rambat `*` tetap persis seperti tercetak (akronim & nama tetap kapital).
 - Situs Pages sendiri tetap publik. Siapa pun yang membuka situsmu bisa memakai OCR/Editor
   dan memakai kuota API-mu. Untuk membatasi, aktifkan Cloudflare Access (gratis) pada domain Pages,
   atau tambahkan aturan Rate Limiting.
