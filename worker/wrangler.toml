@@ -34,6 +34,12 @@ CF_MODEL = "@cf/qwen/qwen3.8-27b"
 # ke domain Pages tertentu, contoh: "https://ocr-studio.pages.dev"
 ALLOWED_ORIGINS = ""
 
+# Opsional — provider "Custom" (endpoint OpenAI-compatible apa pun: OpenRouter,
+# Groq, vLLM, dsb). Model/Base URL juga bisa diisi dari frontend (BYOK perangkat).
+# CUSTOM_BASE_URL = "https://api.openrouter.ai/v1"
+# CUSTOM_MODEL    = "nama-model-di-endpoint-tersebut"
+# CUSTOM_API_KEY  -> JANGAN di sini! Tambah sebagai SECRET di Dashboard (bisa banyak: k1,k2,k3)
+
 [observability]
 enabled = true
 

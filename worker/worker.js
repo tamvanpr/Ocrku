@@ -109,11 +109,11 @@ export default {
     if (request.method === 'GET' && (url.pathname === '/' || url.pathname === '/health')) {
       return cors(json({
         ok: true, service: 'ocr-worker',
-        providers: ['gemini', 'agnes', 'cloudflare'],
+        providers: ['gemini', 'agnes', 'cloudflare', 'custom'],
         geminiModels: [...GEMINI_MODELS],
         agnesModels: [...AGNES_MODELS],
         cfModels: [...CF_MODELS],
-        usage: 'POST /ocr { image: dataURL, provider, modelId } | POST /edit { lines:[{n,t}], context, provider, modelId }',
+        usage: 'POST /ocr { image: dataURL, provider, modelId, apiKey?, baseUrl? } | POST /edit { lines:[{n,t}], context, provider, modelId, apiKey?, baseUrl? } | Secret GEMINI/AGNES/CUSTOM_API_KEY bisa berisi banyak key dipisah koma (rotasi otomatis saat 429/401/403)',
       }), env, origin);
     }
 
@@ -154,7 +154,7 @@ export default {
         return cors(json({ error: 'Tidak ada gambar. Kirim field "image" (data URL base64).' }, 400), env, origin);
       }
       if (!provider) {
-        return cors(json({ error: 'Provider tidak dikenali. Pilih gemini / agnes / cloudflare.' }, 400), env, origin);
+        return cors(json({ error: 'Provider tidak dikenali. Pilih gemini / agnes / cloudflare / custom.' }, 400), env, origin);
       }
 
       const m = image.match(/^data:([^;,]+);base64,([\s\S]*)$/);
@@ -175,8 +175,10 @@ export default {
       }
 
       let text = '';
-      if (provider === 'gemini') text = await runGemini(base64Data, mimeType, pickGeminiModel(modelId, env), env);
-      else if (provider === 'agnes') text = await runAgnes(base64Data, mimeType, pickAgnesModel(modelId, env), env);
+      const apiOpts = readApiOpts(body);
+      if (provider === 'gemini') text = await runGemini(base64Data, mimeType, pickGeminiModel(modelId, env, apiOpts.apiKey), env, apiOpts);
+      else if (provider === 'agnes') text = await runAgnes(base64Data, mimeType, pickAgnesModel(modelId, env, apiOpts.apiKey), env, apiOpts);
+      else if (provider === 'custom') text = await runCustom(base64Data, mimeType, { ...apiOpts, model: String(modelId || '') }, env);
       else text = await runCloudflareAI(base64Data, mimeType, pickCfModel(modelId, env), env);
 
       return cors(json({ text: normalizeOutput(text), provider, reqId, imgHash: shortHash(base64Data) }), env, origin);
@@ -196,12 +198,15 @@ function normalizeProvider(p) {
   if (p === 'cloudflare' || p === 'cf') return 'cloudflare';
   return null;
 }
-function pickGeminiModel(req, env) {
+function pickGeminiModel(req, env, byok) {
+  // Bila pakai key sendiri (BYOK), model bebas — asal karakter aman.
+  if (byok && req && /^[a-z0-9._-]{1,80}$/i.test(req)) return req;
   if (req && GEMINI_MODELS.has(req)) return req;
   const d = env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
   return GEMINI_MODELS.has(d) ? d : DEFAULT_GEMINI_MODEL;
 }
-function pickAgnesModel(req, env) {
+function pickAgnesModel(req, env, byok) {
+  if (byok && req && /^[a-z0-9._-]{1,80}$/i.test(req)) return req;
   if (req && AGNES_MODELS.has(req)) return req;
   const d = env.AGNES_MODEL || DEFAULT_AGNES_MODEL;
   return AGNES_MODELS.has(d) ? d : DEFAULT_AGNES_MODEL;
@@ -210,6 +215,60 @@ function pickCfModel(req, env) {
   if (req && CF_MODELS.has(req)) return req;
   const d = env.CF_MODEL || DEFAULT_CF_MODEL;
   return CF_MODELS.has(d) ? d : DEFAULT_CF_MODEL;
+}
+
+// ================== BYOK + rotasi multi-key ==================
+// Secret seperti GEMINI_API_KEY boleh berisi banyak key dipisah koma:
+// "key1,key2,key3". Key yang dikirim pengguna (BYOK) dicoba duluan.
+// Status 429 / 401 / 403 memicu rotasi otomatis ke key berikutnya di
+// dalam satu request. Error lain (region, format, diblokir) tidak.
+function keyPool(env, name, userKey) {
+  const raw = String(env?.[name] || '');
+  const pooled = raw.includes(',') ? raw.split(',') : raw ? [raw] : [];
+  const keys = [];
+  const seen = new Set();
+  for (const k of [userKey].concat(pooled).map((x) => String(x || '').trim()).filter(Boolean)) {
+    if (!seen.has(k)) { seen.add(k); keys.push(k); }
+  }
+  return keys;
+}
+function keyErr(message) {
+  const e = new Error(message);
+  e.keyIssue = true;
+  return e;
+}
+async function keyRotator(label, keys, fn) {
+  if (!keys.length) {
+    throw new Error(`${label}: belum ada API key — set Secret di Worker atau isi key di Pengaturan.`);
+  }
+  let last = null;
+  for (let i = 0; i < keys.length; i++) {
+    try { return await fn(keys[i], i); }
+    catch (e) {
+      if (e && e.keyIssue) { last = e; continue; }
+      throw e;
+    }
+  }
+  throw new Error(`Semua ${keys.length} API key ${label} gagal. Info terakhir: ${String(last && last.message || '-').slice(0, 300)}`);
+}
+// Base URL untuk provider custom: wajib https + bukan host privat (anti-SSF/SSRF).
+function sanitizeBaseUrl(raw) {
+  const s = String(raw || '').trim().replace(/\/+$/, '');
+  if (!s) throw new Error('Custom base URL kosong: isi di Pengaturan (set Custom) atau set CUSTOM_BASE_URL di Worker.');
+  let u;
+  try { u = new URL(s); } catch { throw new Error('Custom base URL tidak valid: ' + s.slice(0, 80)); }
+  if (u.protocol !== 'https:') throw new Error('Custom base URL harus https:// (Worker tidak bisa menjangkau host lokal).');
+  const host = (u.hostname || '').toLowerCase();
+  const privateHost = ['localhost', '127.0.0.1', '0.0.0.0'].includes(host) ||
+    host.endsWith('.localhost') || host.endsWith('.local') || host.endsWith('.internal') ||
+    /^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(host);
+  if (privateHost) throw new Error('Custom base URL tidak boleh menunjuk host lokal/privat.');
+  return s;
+}
+// Opsi BYOK dari body (tidak pernah dibalas di response / log).
+function readApiOpts(body) {
+  const cap = (v, n) => { const t = String(v || '').trim(); return t ? t.slice(0, n) : ''; };
+  return { apiKey: cap(body?.apiKey, 300), baseUrl: cap(body?.baseUrl, 250) };
 }
 
 // Deteksi jawaban yang benar-benar berformat OCR.
@@ -221,109 +280,162 @@ function looksLikeOcr(text) {
   return OCR_LINE_RE.test(text) || /^\[\.\.\.\]/m.test(text) || text.includes('# NO TEXT');
 }
 
-async function runGemini(base64Data, mimeType, modelName, env) {
-  const apiKey = env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error('GEMINI_API_KEY belum diset di Worker.');
-  // Key dikirim lewat header (bukan ?key=) supaya tidak masuk URL / log.
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
-  const payload = {
-    systemInstruction: { parts: [{ text: SYSTEM_SHORT }] },
-    contents: [{ role: 'user', parts: [{ text: OCR_PROMPT }, { inlineData: { mimeType, data: base64Data } }] }],
-    generationConfig: { temperature: 0.1, maxOutputTokens: 4096 },
-    // OCR hanya menyalin teks yang sudah tercetak. Menurunkan ambang filter agar
-    // dialog komik dewasa tidak diblokir sepihak. Kategori ini adalah pengaturan
-    // resmi API; batas keras Google (mis. konten anak) tetap berlaku dan tidak bisa dilewati.
-    safetySettings: [
-      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
-      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
-      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_ONLY_HIGH' },
-      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
-    ],
-  };
-  const resp = await fetchWithTimeout(geminiUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-    body: JSON.stringify(payload),
-  }, 55000);
-  if (!resp.ok) {
-    const b = scrub((await resp.text()).slice(0, 400));
-    // Google memblokir pemakaian API dari region datacenter yang mengeksekusi Worker
-    if (b.includes('not supported for the API use') || b.includes('User location is not supported') || b.includes('FAILED_PRECONDITION')) {
-      throw new Error('Gemini diblokir di region server saat ini (aturan wilayah Google). Solusi: ganti provider ke Agnes AI atau Cloudflare AI di dropdown header, atau aktifkan Smart Placement di wrangler.toml.');
+async function runGemini(base64Data, mimeType, modelName, env, opts = {}) {
+  const keys = keyPool(env, 'GEMINI_API_KEY', opts.apiKey);
+  return keyRotator('Gemini', keys, async (apiKey, idx) => {
+    // Key dikirim lewat header (bukan ?key=) supaya tidak masuk URL / log.
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
+    const payload = {
+      systemInstruction: { parts: [{ text: SYSTEM_SHORT }] },
+      contents: [{ role: 'user', parts: [{ text: OCR_PROMPT }, { inlineData: { mimeType, data: base64Data } }] }],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 4096 },
+      // OCR hanya menyalin teks yang sudah tercetak. Menurunkan ambang filter agar
+      // dialog komik dewasa tidak diblokir sepihak. Kategori ini adalah pengaturan
+      // resmi API; batas keras Google (mis. konten anak) tetap berlaku dan tidak bisa dilewati.
+      safetySettings: [
+        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
+        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
+        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_ONLY_HIGH' },
+        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
+      ],
+    };
+    const resp = await fetchWithTimeout(geminiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      body: JSON.stringify(payload),
+    }, 55000);
+    if (!resp.ok) {
+      const b = scrub((await resp.text()).slice(0, 400));
+      if (resp.status === 429) throw keyErr(`Limit Gemini habis (429) di key #${idx + 1}. Detail: ${b}`);
+      if (resp.status === 401 || resp.status === 403) throw keyErr(`API key Gemini ditolak (401/403) di key #${idx + 1}. Detail: ${b}`);
+      // Google memblokir pemakaian API dari region datacenter yang mengeksekusi Worker
+      if (b.includes('not supported for the API use') || b.includes('User location is not supported') || b.includes('FAILED_PRECONDITION')) {
+        throw new Error('Gemini diblokir di region server saat ini (aturan wilayah Google). Solusi: ganti provider ke Agnes AI atau Cloudflare AI di dropdown header, atau aktifkan Smart Placement di wrangler.toml.');
+      }
+      if (resp.status === 400) throw new Error(`Gemini menolak request (model "${modelName}"?). Detail: ${b}`);
+      throw new Error(`Gemini error ${resp.status}: ${b}`);
     }
-    if (resp.status === 400) throw new Error(`Gemini menolak request (model "${modelName}"?). Detail: ${b}`);
-    if (resp.status === 401 || resp.status === 403) throw new Error('API key Gemini salah / tanpa akses. Detail: ' + b);
-    if (resp.status === 429) throw new Error('Limit Gemini habis (429). Tunggu / ganti model. Detail: ' + b);
-    throw new Error(`Gemini error ${resp.status}: ${b}`);
-  }
-  const data = await resp.json();
+    const data = await resp.json();
 
-  // Diblokir di level prompt (sebelum ada kandidat)
-  if (data?.promptFeedback?.blockReason) {
-    throw new Error(`Gemini menolak gambar (${data.promptFeedback.blockReason}). Coba model lain atau provider Agnes/Cloudflare.`);
-  }
-  const cand = data?.candidates?.[0];
-  const text = cand?.content?.parts?.map((p) => p.text || '').join('').trim() || '';
-  if (!text) {
-    const fr = cand?.finishReason;
-    if (fr === 'SAFETY' || fr === 'PROHIBITED_CONTENT' || fr === 'BLOCKLIST' || fr === 'SPII' || fr === 'IMAGE_SAFETY') {
-      throw new Error(`Gemini memblokir gambar (${fr}). Coba model lain atau provider Agnes/Cloudflare.`);
+    // Diblokir di level prompt (sebelum ada kandidat)
+    if (data?.promptFeedback?.blockReason) {
+      throw new Error(`Gemini menolak gambar (${data.promptFeedback.blockReason}). Coba model lain atau provider Agnes/Cloudflare.`);
     }
-    if (fr === 'RECITATION') throw new Error('Gemini menolak karena terdeteksi kutipan berhak cipta (RECITATION). Coba lagi / ganti model.');
-    if (fr === 'MAX_TOKENS') throw new Error('Respons terpotong sebelum ada teks (MAX_TOKENS). Coba model lain.');
-    return '# NO TEXT DETECTED';
-  }
-  if (!looksLikeOcr(text)) {
-    throw new Error(refusalHint('Gemini', text));
-  }
-  return text;
+    const cand = data?.candidates?.[0];
+    const text = cand?.content?.parts?.map((p) => p.text || '').join('').trim() || '';
+    if (!text) {
+      const fr = cand?.finishReason;
+      if (fr === 'SAFETY' || fr === 'PROHIBITED_CONTENT' || fr === 'BLOCKLIST' || fr === 'SPII' || fr === 'IMAGE_SAFETY') {
+        throw new Error(`Gemini memblokir gambar (${fr}). Coba model lain atau provider Agnes/Cloudflare.`);
+      }
+      if (fr === 'RECITATION') throw new Error('Gemini menolak karena terdeteksi kutipan berhak cipta (RECITATION). Coba lagi / ganti model.');
+      if (fr === 'MAX_TOKENS') throw new Error('Respons terpotong sebelum ada teks (MAX_TOKENS). Coba model lain.');
+      return '# NO TEXT DETECTED';
+    }
+    if (!looksLikeOcr(text)) {
+      throw new Error(refusalHint('Gemini', text));
+    }
+    return text;
+  });
 }
 
 // Agnes AI — OpenAI-compatible chat completions + image_url (data URI didukung)
-async function runAgnes(base64Data, mimeType, modelName, env) {
-  const apiKey = env.AGNES_API_KEY;
-  if (!apiKey) throw new Error('AGNES_API_KEY belum diset di Worker.');
+async function runAgnes(base64Data, mimeType, modelName, env, opts = {}) {
+  const keys = keyPool(env, 'AGNES_API_KEY', opts.apiKey);
   const base = (env.AGNES_BASE_URL || DEFAULT_AGNES_BASE).replace(/\/+$/, '');
   // Cegah SSRF via env yang salah konfigurasi: wajib https.
   if (!/^https:\/\//i.test(base)) throw new Error('AGNES_BASE_URL harus diawali https://');
   const dataUrl = `data:${mimeType};base64,${base64Data}`;
-  const payload = {
-    model: modelName,
-    temperature: 0.1,
-    max_tokens: 4096,
-    messages: [
-      { role: 'system', content: SYSTEM_SHORT },
-      {
-        role: 'user',
-        content: [
-          { type: 'text', text: OCR_PROMPT },
-          { type: 'image_url', image_url: { url: dataUrl } },
+  return keyRotator('Agnes', keys, async (apiKey, idx) => {
+    const payload = {
+      model: modelName,
+      temperature: 0.1,
+      max_tokens: 4096,
+      messages: [
+        { role: 'system', content: SYSTEM_SHORT },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: OCR_PROMPT },
+            { type: 'image_url', image_url: { url: dataUrl } },
+          ],
+        },
+      ],
+    };
+    const resp = await fetchWithTimeout(`${base}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify(payload),
+    }, 55000);
+    if (!resp.ok) {
+      const b = scrub((await resp.text()).slice(0, 400));
+      if (resp.status === 429) throw keyErr(`Limit Agnes habis (429) di key #${idx + 1}. Detail: ${b}`);
+      if (resp.status === 401 || resp.status === 403) throw keyErr(`API key Agnes ditolak (401/403) di key #${idx + 1}. Detail: ${b}`);
+      throw new Error(`Agnes error ${resp.status}: ${b}`);
+    }
+    const data = await resp.json();
+    const choice = data?.choices?.[0];
+    const text = (typeof choice?.message?.content === 'string' ? choice.message.content : '').trim();
+    if (!text) {
+      if (choice?.finish_reason === 'content_filter') throw new Error('Agnes memblokir gambar (content_filter). Coba model lain atau provider lain.');
+      return '# NO TEXT DETECTED';
+    }
+    if (!looksLikeOcr(text)) {
+      throw new Error(refusalHint('Agnes', text));
+    }
+    return text;
+  });
+}
+
+// Custom — endpoint OpenAI-compatible apa pun (OpenRouter, Groq, vLLM, dsb).
+// Base URL + model bebas; API key opsional (endpoint publik bisa tanpa key).
+async function runCustom(base64Data, mimeType, opts, env) {
+  const base = sanitizeBaseUrl(opts.baseUrl || env.CUSTOM_BASE_URL);
+  const model = String(opts.model || env.CUSTOM_MODEL || '').slice(0, 120);
+  if (!model) throw new Error('Custom model kosong: isi "Custom — Model" di Pengaturan atau set CUSTOM_MODEL di Worker.');
+  const keys = keyPool(env, 'CUSTOM_API_KEY', opts.apiKey);
+  const dataUrl = `data:${mimeType};base64,${base64Data}`;
+  // Tanpa key pun sudah didukung: pool kosong → satu percobaan tanpa Authorization.
+  return keyRotator('Custom', keys.length ? keys : [null], async (apiKey) => {
+    const headers = { 'Content-Type': 'application/json' };
+    if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+    const resp = await fetchWithTimeout(`${base}/chat/completions`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model,
+        temperature: 0.1,
+        max_tokens: 4096,
+        messages: [
+          { role: 'system', content: SYSTEM_SHORT },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: OCR_PROMPT },
+              { type: 'image_url', image_url: { url: dataUrl } },
+            ],
+          },
         ],
-      },
-    ],
-  };
-  const resp = await fetchWithTimeout(`${base}/chat/completions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify(payload),
-  }, 55000);
-  if (!resp.ok) {
-    const b = scrub((await resp.text()).slice(0, 400));
-    if (resp.status === 401 || resp.status === 403) throw new Error('API key Agnes salah / tanpa akses. Detail: ' + b);
-    if (resp.status === 429) throw new Error('Limit Agnes habis (429). Tunggu / ganti model / cek kuota. Detail: ' + b);
-    throw new Error(`Agnes error ${resp.status}: ${b}`);
-  }
-  const data = await resp.json();
-  const choice = data?.choices?.[0];
-  const text = (typeof choice?.message?.content === 'string' ? choice.message.content : '').trim();
-  if (!text) {
-    if (choice?.finish_reason === 'content_filter') throw new Error('Agnes memblokir gambar (content_filter). Coba model lain atau provider lain.');
-    return '# NO TEXT DETECTED';
-  }
-  if (!looksLikeOcr(text)) {
-    throw new Error(refusalHint('Agnes', text));
-  }
-  return text;
+      }),
+    }, 60000);
+    if (!resp.ok) {
+      const b = scrub((await resp.text()).slice(0, 400));
+      if (resp.status === 429) throw keyErr(`Custom API limit (429). Detail: ${b}`);
+      if (resp.status === 401 || resp.status === 403) throw keyErr(`Custom API menolak key (401/403). Detail: ${b}`);
+      throw new Error(`Custom API error ${resp.status}: ${b}`);
+    }
+    const data = await resp.json();
+    const choice = data?.choices?.[0];
+    const text = (typeof choice?.message?.content === 'string' ? choice.message.content : '').trim();
+    if (!text) {
+      if (choice?.finish_reason === 'content_filter') throw new Error('Custom API memblokir gambar (content_filter). Coba model/provider lain.');
+      return '# NO TEXT DETECTED';
+    }
+    if (!looksLikeOcr(stripThink(text))) {
+      throw new Error(refusalHint('Custom AI', text));
+    }
+    return text;
+  });
 }
 
 async function runCloudflareAI(base64Data, mimeType, preferredModel, env) {
@@ -397,6 +509,8 @@ function scrub(s) {
   return String(s)
     .replace(/([?&]key=)[^&\s"']+/gi, '$1***')
     .replace(/\bAIza[0-9A-Za-z_-]{20,}\b/g, '***')
+    .replace(/\bsk-[A-Za-z0-9_-]{16,}\b/g, '***')
+    .replace(/\bghp_[A-Za-z0-9]{20,}\b/g, '***')
     .replace(/(Bearer\s+)[A-Za-z0-9._~+/=-]{8,}/gi, '$1***');
 }
 
@@ -1089,10 +1203,11 @@ async function handleEdit(request, env, origin) {
 
     const provider = normalizeProvider(body?.provider ?? body?.model);
     if (!provider) {
-      return cors(json({ error: 'Provider tidak dikenali. Pilih gemini / agnes / cloudflare.' }, 400), env, origin);
+      return cors(json({ error: 'Provider tidak dikenali. Pilih gemini / agnes / cloudflare / custom.' }, 400), env, origin);
     }
-    const modelId = String(body?.modelId || '').trim();
+    const modelId = String(body?.modelId || '').trim().slice(0, 120);
     const reqId = typeof body?.reqId === 'string' ? body.reqId.slice(0, 64) : null;
+    const apiOpts = readApiOpts(body);
 
     const lines = body?.lines;
     if (!Array.isArray(lines) || !lines.length) {
@@ -1124,7 +1239,7 @@ async function handleEdit(request, env, origin) {
       clean.map((l) => `${l.n}| ${l.t}`).join('\n');
 
     const system = EDIT_PROMPT + EDIT_PROTOCOL;
-    const raw = await runEditText(provider, modelId, system, userText, env);
+    const raw = await runEditText(provider, modelId, system, userText, env, apiOpts);
     const parsed = parseEditJson(raw);
     const { changes, review } = validateEdits(clean, parsed);
     return cors(json({ changes, review, provider, reqId }), env, origin);
@@ -1135,79 +1250,109 @@ async function handleEdit(request, env, origin) {
 }
 
 // ---------- penyedia (teks saja) ----------
-async function runEditText(provider, modelId, system, userText, env) {
-  if (provider === 'gemini') return editGemini(system, userText, pickGeminiModel(modelId, env), env);
-  if (provider === 'agnes') return editAgnes(system, userText, pickAgnesModel(modelId, env), env);
+async function runEditText(provider, modelId, system, userText, env, opts = {}) {
+  if (provider === 'gemini') return editGemini(system, userText, pickGeminiModel(modelId, env, opts.apiKey), env, opts);
+  if (provider === 'agnes') return editAgnes(system, userText, pickAgnesModel(modelId, env, opts.apiKey), env, opts);
+  if (provider === 'custom') return editCustom(system, userText, String(modelId || env.CUSTOM_MODEL || '').slice(0, 120), env, opts);
   return editCloudflare(system, userText, pickCfModel(modelId, env), env);
 }
 
 function editHttpError(who, status, bodyText) {
   const b = scrub(String(bodyText).slice(0, 400));
-  if (status === 401 || status === 403) return new Error(`API key ${who} salah / tanpa akses. Detail: ${b}`);
-  if (status === 429) return new Error(`Limit ${who} habis (429). Tunggu / ganti model. Detail: ${b}`);
+  if (status === 429) return keyErr(`Limit ${who} habis (429) di key ini. Tunggu / pakai key lain. Detail: ${b}`);
+  if (status === 401 || status === 403) return keyErr(`API key ${who} ditolak (401/403) di key ini. Detail: ${b}`);
   if (b.includes('User location is not supported') || b.includes('not supported for the API use')) {
     return new Error('Gemini diblokir di region server saat ini. Ganti provider ke Agnes AI atau Cloudflare AI.');
   }
   return new Error(`${who} error ${status}: ${b}`);
 }
 
-async function editGemini(system, userText, modelName, env) {
-  const apiKey = env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error('GEMINI_API_KEY belum diset di Worker.');
-  const resp = await fetchWithTimeout(
-    `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: system }] },
-        contents: [{ role: 'user', parts: [{ text: userText }] }],
-        generationConfig: { temperature: 0.3, maxOutputTokens: 8192, responseMimeType: 'application/json' },
-        safetySettings: [
-          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
-          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
-          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_ONLY_HIGH' },
-          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
-        ],
-      }),
-    }, 90000);
-  if (!resp.ok) throw editHttpError('Gemini', resp.status, await resp.text());
-  const data = await resp.json();
-  if (data?.promptFeedback?.blockReason) {
-    throw new Error(`Gemini menolak teks (${data.promptFeedback.blockReason}). Coba model lain atau provider lain.`);
-  }
-  const cand = data?.candidates?.[0];
-  const text = cand?.content?.parts?.map((p) => p.text || '').join('').trim() || '';
-  if (!text) {
-    const fr = cand?.finishReason;
-    if (fr && fr !== 'STOP') throw new Error(`Gemini tidak menghasilkan jawaban (${fr}). Coba model lain.`);
-    throw new Error('Gemini mengembalikan jawaban kosong. Coba lagi.');
-  }
-  return text;
+async function editGemini(system, userText, modelName, env, opts = {}) {
+  const keys = keyPool(env, 'GEMINI_API_KEY', opts.apiKey);
+  return keyRotator('Gemini', keys, async (apiKey) => {
+    const resp = await fetchWithTimeout(
+      `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: system }] },
+          contents: [{ role: 'user', parts: [{ text: userText }] }],
+          generationConfig: { temperature: 0.3, maxOutputTokens: 8192, responseMimeType: 'application/json' },
+          safetySettings: [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
+            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_ONLY_HIGH' },
+            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
+          ],
+        }),
+      }, 90000);
+    if (!resp.ok) throw editHttpError('Gemini', resp.status, await resp.text());
+    const data = await resp.json();
+    if (data?.promptFeedback?.blockReason) {
+      throw new Error(`Gemini menolak teks (${data.promptFeedback.blockReason}). Coba model lain atau provider lain.`);
+    }
+    const cand = data?.candidates?.[0];
+    const text = cand?.content?.parts?.map((p) => p.text || '').join('').trim() || '';
+    if (!text) {
+      const fr = cand?.finishReason;
+      if (fr && fr !== 'STOP') throw new Error(`Gemini tidak menghasilkan jawaban (${fr}). Coba model lain.`);
+      throw new Error('Gemini mengembalikan jawaban kosong. Coba lagi.');
+    }
+    return text;
+  });
 }
 
-async function editAgnes(system, userText, modelName, env) {
-  const apiKey = env.AGNES_API_KEY;
-  if (!apiKey) throw new Error('AGNES_API_KEY belum diset di Worker.');
+async function editAgnes(system, userText, modelName, env, opts = {}) {
+  const keys = keyPool(env, 'AGNES_API_KEY', opts.apiKey);
   const base = (env.AGNES_BASE_URL || DEFAULT_AGNES_BASE).replace(/\/+$/, '');
   if (!/^https:\/\//i.test(base)) throw new Error('AGNES_BASE_URL harus diawali https://');
-  const resp = await fetchWithTimeout(`${base}/chat/completions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: modelName, temperature: 0.3, max_tokens: 8192,
-      messages: [{ role: 'system', content: system }, { role: 'user', content: userText }],
-    }),
-  }, 90000);
-  if (!resp.ok) throw editHttpError('Agnes', resp.status, await resp.text());
-  const data = await resp.json();
-  const choice = data?.choices?.[0];
-  const text = (typeof choice?.message?.content === 'string' ? choice.message.content : '').trim();
-  if (!text) {
-    if (choice?.finish_reason === 'content_filter') throw new Error('Agnes memblokir teks (content_filter). Coba model lain.');
-    throw new Error('Agnes mengembalikan jawaban kosong. Coba lagi.');
-  }
-  return text;
+  return keyRotator('Agnes', keys, async (apiKey) => {
+    const resp = await fetchWithTimeout(`${base}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: modelName, temperature: 0.3, max_tokens: 8192,
+        messages: [{ role: 'system', content: system }, { role: 'user', content: userText }],
+      }),
+    }, 90000);
+    if (!resp.ok) throw editHttpError('Agnes', resp.status, await resp.text());
+    const data = await resp.json();
+    const choice = data?.choices?.[0];
+    const text = (typeof choice?.message?.content === 'string' ? choice.message.content : '').trim();
+    if (!text) {
+      if (choice?.finish_reason === 'content_filter') throw new Error('Agnes memblokir teks (content_filter). Coba model lain.');
+      throw new Error('Agnes mengembalikan jawaban kosong. Coba lagi.');
+    }
+    return text;
+  });
+}
+
+// Custom text (OpenAI-compatible, tanpa gambar)
+async function editCustom(system, userText, model, env, opts = {}) {
+  const base = sanitizeBaseUrl(opts.baseUrl || env.CUSTOM_BASE_URL);
+  const keys = keyPool(env, 'CUSTOM_API_KEY', opts.apiKey);
+  return keyRotator('Custom', keys.length ? keys : [null], async (apiKey) => {
+    const headers = { 'Content-Type': 'application/json' };
+    if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+    const resp = await fetchWithTimeout(`${base}/chat/completions`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: String(model || '').slice(0, 120), temperature: 0.3, max_tokens: 8192,
+        messages: [{ role: 'system', content: system }, { role: 'user', content: userText }],
+      }),
+    }, 90000);
+    if (!resp.ok) throw editHttpError('Custom', resp.status, await resp.text());
+    const data = await resp.json();
+    const choice = data?.choices?.[0];
+    const text = (typeof choice?.message?.content === 'string' ? choice.message.content : '').trim();
+    if (!text) {
+      if (choice?.finish_reason === 'content_filter') throw new Error('Custom API memblokir teks (content_filter). Coba model lain.');
+      throw new Error('Custom API mengembalikan jawaban kosong. Coba lagi.');
+    }
+    return text;
+  });
 }
 
 async function editCloudflare(system, userText, preferredModel, env) {

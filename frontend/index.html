@@ -159,7 +159,8 @@ button:focus:not(:focus-visible){outline:none}
 .modal .message{font-size:14px;color:var(--ink-2);line-height:1.6;white-space:pre-wrap;margin:8px 0 4px}
 .field{margin-bottom:14px}
 .field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
-.field select{width:100%;height:40px;padding:0 10px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--ink);font-size:13px}
+.field input,.field select{width:100%;height:40px;padding:0 10px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--ink);font-size:13px}
+.field input:focus,.field select:focus{outline:2px solid var(--accent);outline-offset:1px}
 .field .tip{font-size:12px;color:var(--ink-3);margin-top:5px;line-height:1.5}
 .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
 .modal .btn{height:38px;padding:0 20px}
@@ -249,6 +250,7 @@ button:focus:not(:focus-visible){outline:none}
           <option value="gemini">Gemini</option>
           <option value="agnes">Agnes AI</option>
           <option value="cloudflare">Cloudflare AI</option>
+          <option value="custom">Custom (OpenAI)</option>
         </select>
       </div>
       <button class="icon-btn" id="themeBtn" type="button" aria-label="Ganti tema" title="Ganti tema"></button>
@@ -326,13 +328,29 @@ button:focus:not(:focus-visible){outline:none}
 <!-- Pengaturan model -->
 <div class="overlay" id="settingsOverlay">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-    <h3 id="setTitle">Model AI</h3>
-    <p class="sub">Pilih model bawaan tiap penyedia. Penyedia diganti lewat menu di header.</p>
+    <h3 id="setTitle">Penyedia AI</h3>
+    <p class="sub">Penyedia dipilih lewat menu di header. API key milikmu (BYOK, opsional) disimpan
+      hanya di browser ini dan hanya dikirim ke Worker-mu sendiri — tidak pernah masuk log/repo.
+      Isi beberapa key dipisah koma: saat satu key kena limit (429/401), otomatis dilanjutkan ke key berikutnya.</p>
+
     <div class="field"><label for="setGemini">Model Gemini</label><select id="setGemini"></select></div>
+    <div class="field"><label for="setGeminiKey">API key Gemini (opsional)</label>
+      <input type="password" id="setGeminiKey" autocomplete="off" spellcheck="false" placeholder="AIza… — beberapa key: k1,k2,k3" /></div>
+
     <div class="field"><label for="setAgnes">Model Agnes AI</label><select id="setAgnes"></select></div>
+    <div class="field"><label for="setAgnesKey">API key Agnes (opsional)</label>
+      <input type="password" id="setAgnesKey" autocomplete="off" spellcheck="false" placeholder="key Agnes… — beberapa key: k1,k2,k3" /></div>
+
     <div class="field"><label for="setCf">Model Cloudflare</label><select id="setCf"></select>
-      <div class="tip">Qwen jadi pilihan utama. Model lain dipakai otomatis bila yang utama gagal.</div>
+      <div class="tip">Qwen jadi pilihan utama. Model lain dipakai otomatis bila yang utama gagal. (Lewat binding [ai] Worker — tanpa API key.)</div>
     </div>
+
+    <div class="field"><label for="setCustomUrl">Custom — Base URL (endpoint OpenAI-compatible)</label>
+      <input type="url" id="setCustomUrl" inputmode="url" spellcheck="false" placeholder="https://api.openrouter.ai/v1" /></div>
+    <div class="field"><label for="setCustomModel">Custom — Model</label>
+      <input type="text" id="setCustomModel" spellcheck="false" placeholder="cth: model-vision-2.5, openai/gpt-4o-mini, …" /></div>
+    <div class="field"><label for="setCustomKey">Custom — API key (opsional)</label>
+      <input type="password" id="setCustomKey" autocomplete="off" spellcheck="false" placeholder="kosongkan bila endpoint-mu tak butuh key / pakai Secret CUSTOM_API_KEY di Worker" /></div>
     <div class="modal-actions">
       <button class="btn" id="settingsReset" type="button">Reset</button>
       <button class="btn primary" id="settingsSave" type="button">Simpan</button>
@@ -387,8 +405,10 @@ const PROVIDERS = {
     {id:'@cf/meta/llama-3.2-11b-vision-instruct', desc:'Llama 3.2 Vision 11B'},
     {id:'@cf/mistralai/mistral-small-3.1-24b-instruct', desc:'Mistral Small 3.1 24B vision'},
   ], def:'@cf/qwen/qwen3.8-27b'},
+  custom: { label:'Custom (OpenAI-compatible)', models:[], def:'' },
 };
-const DEFAULTS = { provider:'gemini', geminiModel:'gemini-3.5-flash-lite', agnesModel:'agnes-3.0-flash', cfModel:'@cf/qwen/qwen3.8-27b' };
+const DEFAULTS = { provider:'gemini', geminiModel:'gemini-3.5-flash-lite', agnesModel:'agnes-3.0-flash', cfModel:'@cf/qwen/qwen3.8-27b',
+  customUrl:'', customModel:'', customKey:'', geminiKey:'', agnesKey:'' };
 const LS_KEY='ocr_settings_v2', HIST_KEY='ocr_history_v1', HIST_MAX=20;
 const MAX_TEXT_STORE=12000;
 
@@ -420,14 +440,37 @@ function shortHash(s){let h=5381;for(let i=0;i<s.length;i+=8)h=(((h<<5)+h+s.char
 function loadSettings(){try{return{...DEFAULTS,...JSON.parse(localStorage.getItem(LS_KEY)||'{}')};}catch{return{...DEFAULTS};}}
 function saveSettings(){try{localStorage.setItem(LS_KEY,JSON.stringify(settings));}catch{}}
 function activeModel(){
+  if(provider==='custom')return (settings.customModel||'').trim()||'custom — isi base URL & model';
   const map={gemini:'geminiModel',agnes:'agnesModel',cloudflare:'cfModel'};
   const p=PROVIDERS[provider];
   const v=settings[map[provider]];
   return p.models.some(m=>m.id===v)?v:p.def;
 }
+/* model yang ditampilkan (caption/meta) vs yang dikirim ke request body */
+function displayName(p){
+  if(p!=='custom')return activeModel();
+  return (settings.customModel||'').trim()||'custom — isi base URL & model';
+}
+function requestModel(p){
+  if(p!=='custom')return activeModel();
+  return (settings.customModel||'').replace(/[\r\n]+/g,'').trim().slice(0,120);
+}
+/* BYOK: key milik pengguna dikirim opsional; disimpan hanya di browser ini */
+function authBody(p){
+  if(p==='gemini')return settings.geminiKey?{apiKey:settings.geminiKey}:null;
+  if(p==='agnes')return settings.agnesKey?{apiKey:settings.agnesKey}:null;
+  if(p==='custom'){
+    const o={};
+    if((settings.customKey||'').trim())o.apiKey=settings.customKey.trim();
+    if((settings.customUrl||'').trim())o.baseUrl=settings.customUrl.trim();
+    return o;
+  }
+  return null;
+}
+function mergeAuth(req,p){const a=authBody(p);if(a)Object.assign(req,a);return req;}
 function refreshHome(){
   providerSelect.value=provider;
-  modelCaption.textContent=activeModel();
+  modelCaption.textContent=displayName(provider);
 }
 providerSelect.addEventListener('change',()=>{provider=providerSelect.value;settings.provider=provider;saveSettings();refreshHome();});
 
@@ -493,6 +536,11 @@ function openSettings(){
   fillSelect($('setGemini'),PROVIDERS.gemini.models,settings.geminiModel);
   fillSelect($('setAgnes'),PROVIDERS.agnes.models,settings.agnesModel);
   fillSelect($('setCf'),PROVIDERS.cloudflare.models,settings.cfModel);
+  $('setGeminiKey').value=settings.geminiKey||'';
+  $('setAgnesKey').value=settings.agnesKey||'';
+  $('setCustomUrl').value=settings.customUrl||'';
+  $('setCustomModel').value=settings.customModel||'';
+  $('setCustomKey').value=settings.customKey||'';
   openOverlay(setOverlay);
 }
 $('settingsBtn').onclick=openSettings;
@@ -500,7 +548,11 @@ modelCaption.onclick=openSettings;
 setOverlay.addEventListener('click',e=>{if(e.target===setOverlay)closeOverlay(setOverlay);});
 $('settingsSave').onclick=()=>{
   settings.geminiModel=$('setGemini').value;settings.agnesModel=$('setAgnes').value;settings.cfModel=$('setCf').value;
-  saveSettings();refreshHome();closeOverlay(setOverlay);showToast('Model disimpan');
+  settings.geminiKey=$('setGeminiKey').value.trim();settings.agnesKey=$('setAgnesKey').value.trim();
+  settings.customKey=$('setCustomKey').value.trim();
+  settings.customModel=($('setCustomModel').value||'').replace(/[\r\n]+/g,' ').trim().slice(0,120);
+  settings.customUrl=($('setCustomUrl').value||'').trim().slice(0,250);
+  saveSettings();refreshHome();closeOverlay(setOverlay);showToast('Pengaturan disimpan');
 };
 $('settingsReset').onclick=()=>{
   const p=settings.provider;settings={...DEFAULTS,provider:p};saveSettings();refreshHome();closeOverlay(setOverlay);showToast('Model dikembalikan ke bawaan');
@@ -798,7 +850,7 @@ async function runOCR(d){
   try{
     const base=CONFIG.WORKER_URL.replace(/\/+$/,'');
     const resp=await fetch(base+'/ocr',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({image:img,provider:p,modelId:mid,reqId:reqId||undefined}),signal:ctrl.signal});
+      body:JSON.stringify(mergeAuth({image:img,provider:p,modelId:requestModel(p),reqId:reqId||undefined},p)),signal:ctrl.signal});
     let data={};
     try{data=await resp.json();}catch{throw new Error('Respons server bukan JSON. Periksa Service Binding OCR_WORKER di pengaturan Pages.');}
     if(!resp.ok)throw new Error(data.error||('Server membalas '+resp.status));
@@ -842,7 +894,7 @@ sendBtn.onclick=async()=>{
   if(!currentItems.length){await showAlert('Pilih gambar dulu: ketuk tombol +, seret ke jendela, atau tempel dari clipboard.','Belum ada gambar');return;}
   sending=true;batchStop=false;
   try{
-    const p=provider,mid=activeModel();
+    const p=provider,mid=displayName(p);
     const batch=currentItems.slice();
     resetFile();
     if(batch.length===1){await sendOne(batch[0],p,mid);}
@@ -1008,7 +1060,7 @@ async function edCall(lines,context){
   const timer=setTimeout(()=>ctrl.abort(),120000);
   try{
     const resp=await fetch(base+'/edit',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({lines,context,provider:ed.p,modelId:ed.mid}),signal:ctrl.signal});
+      body:JSON.stringify(mergeAuth({lines,context,provider:ed.p,modelId:requestModel(ed.p)},ed.p)),signal:ctrl.signal});
     let data={};
     try{data=await resp.json();}catch{throw new Error('Respons server bukan JSON. Periksa Service Binding OCR_WORKER di pengaturan Pages.');}
     if(!resp.ok)throw new Error(data.error||('Server membalas '+resp.status));
@@ -1018,7 +1070,7 @@ async function edCall(lines,context){
 
 async function edProcess(from){
   ed.running=true;ed.stop=false;ed.failed=false;
-  ed.p=provider;ed.mid=activeModel();ed.providers.add(PROVIDERS[ed.p].label+' · '+ed.mid);
+  ed.p=provider;ed.mid=displayName(provider);ed.providers.add(PROVIDERS[ed.p].label+' · '+ed.mid);
   edSyncButtons();
   let err=null;
   for(let k=from;k<ed.chunks.length;k++){

@@ -44,6 +44,9 @@ ocr-studio/
 - **Multi-gambar**: pilih/seret/tempel hingga 20 halaman sekaligus. Tiap halaman diproses berurutan (ada progres + tombol Hentikan, tombol Ulangi per halaman), lalu dibuat kartu gabungan satu chapter (Salin/Unduh chapter).
 - **Anti-markdown**: sisa markdown dari model (code fence, **bold**, bullet, heading) dibersihkan otomatis di worker dan sekali lagi di frontend; prefix OCR `()`, `[]`, `<>`, `*`, `Sfx`, `#` tidak pernah ikut terhapus.
 - **Kapital komik Barat**: dialog/narasi/monolog ber-alfabet yang dicetak ALL CAPS dikembalikan dalam sentence case sesuai aturan penulisan; `Sfx`, teks sistem `#`, dan tulisan rambat `*` tetap persis seperti tercetak (akronim & nama tetap kapital).
+- **BYOK (key sendiri)**: di Pengaturan bisa mengisi key Gemini/Agnes/Custom milikmu — tersimpan hanya di browser (localStorage), hanya dikirim ke Worker-mu sendiri, dan tidak pernah ter-log. Key owner tetap jadi fallback bila BYOK kosong.
+- **Multi-key rotasi otomatis**: value Secret (`GEMINI_API_KEY`, `AGNES_API_KEY`, `CUSTOM_API_KEY`) boleh `k1,k2,k3`. Saat 429/401/403, request lanjut ke key berikutnya; bila semua gagal, pesan error menyebut kuncinya.
+- **Provider Custom (OpenAI-compatible)**: base URL + model bebas (OpenRouter, Groq, vLLM, dsb), tanpa key pun bisa. Set via Pengaturan di browser, atau `CUSTOM_BASE_URL`/`CUSTOM_MODEL` di Worker. Key owner via Secret `CUSTOM_API_KEY`.
 - Situs Pages sendiri tetap publik. Siapa pun yang membuka situsmu bisa memakai OCR/Editor
   dan memakai kuota API-mu. Untuk membatasi, aktifkan Cloudflare Access (gratis) pada domain Pages,
   atau tambahkan aturan Rate Limiting.
