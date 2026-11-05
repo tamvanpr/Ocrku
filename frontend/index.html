@@ -728,7 +728,7 @@ $('testKeyBtn').onclick=async()=>{
     }
   }catch(e){
     if(id!==testSeq)return;
-    setTestStatus('Gagal: tidak bisa menjangkau server.',false);
+    setTestStatus('Gagal: '+(e&&e.message||'Tidak dapat menjangkau server.')+'.',false);
     btn.classList.remove('p-testing');btn.disabled=false;
   }
 };
