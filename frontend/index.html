@@ -15,6 +15,7 @@ try{
 }catch(e){}
 </script>
 <title>OCR Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
 <style>
 :root{
   color-scheme:light dark;
@@ -151,7 +152,7 @@ button:focus:not(:focus-visible){outline:none}
 .progress > i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
 
 /* ---------- modal ---------- */
-.overlay{position:fixed;inset:0;background:var(--overlay);display:none;justify-content:center;align-items:center;z-index:1000;padding:20px}
+.overlay{position:fixed;inset:0;background:var(--overlay);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:none;justify-content:center;align-items:center;z-index:1000;padding:20px}
 .overlay.active{display:flex}
 .modal{background:var(--surface);border-radius:18px;padding:24px;width:100%;max-width:440px;max-height:88dvh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);animation:rise .18s ease-out}
 .modal h3{font-size:17px;font-weight:650;letter-spacing:-.01em;margin-bottom:4px}
@@ -162,17 +163,59 @@ button:focus:not(:focus-visible){outline:none}
 .field input,.field select{width:100%;height:40px;padding:0 10px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--ink);font-size:13px}
 .field input:focus,.field select:focus{outline:2px solid var(--accent);outline-offset:1px}
 .field .tip{font-size:12px;color:var(--ink-3);margin-top:5px;line-height:1.5}
-/* tab penyedia di modal Pengaturan */
-.p-tabs{display:flex;gap:4px;margin-bottom:16px;padding:4px;background:var(--surface-2);border-radius:12px}
-.p-tab{flex:1 1 0;min-width:0;height:34px;border:0;border-radius:9px;background:transparent;color:var(--ink-2);font-size:12.5px;font-weight:600;cursor:pointer;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.p-tab:hover{color:var(--ink)}
-.p-tab[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.15)}
-.p-pane{display:none}
-.p-pane.active{display:block}
-.opt-tag{display:inline-block;font-size:11px;font-weight:500;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:0 7px;line-height:16px;vertical-align:1px}
 .modal .sub code{font-family:var(--mono);font-size:11.5px;padding:1px 5px;border-radius:6px;background:var(--surface-2);border:1px solid var(--line)}
 .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
 .modal .btn{height:38px;padding:0 20px}
+
+/* ===== Modal Pengaturan — desain dari mockup Stitch (tab per penyedia, ringkas) ===== */
+#settingsOverlay .modal{display:flex;flex-direction:column;overflow:hidden;padding:20px;border:1px solid var(--line-strong);border-radius:24px;box-shadow:0 24px 70px rgba(0,0,0,.35)}
+#settingsOverlay .modal h3{font-size:18px;font-weight:700;margin:0}
+#settingsOverlay .modal-actions{display:flex;justify-content:space-between;gap:12px;margin-top:18px}
+#settingsOverlay .modal-actions .btn{height:40px;padding:0 18px;border-radius:12px;font-size:13px}
+#settingsOverlay .modal-actions .btn.primary{height:40px;flex:1;padding:0 18px;border-radius:12px;font-size:13px;font-weight:600}
+#settingsOverlay .p-content{flex:1 1 auto;min-height:0;overflow-y:auto}
+#settingsOverlay .field label{font-size:12px;font-weight:500;margin-bottom:6px}
+#settingsOverlay .field input,#settingsOverlay .field select{width:100%;height:40px;padding:0 12px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface-2);color:var(--ink);font-size:13px}
+#settingsOverlay .field input:focus,#settingsOverlay .field select:focus{outline:2px solid var(--accent);outline-offset:1px}
+#settingsOverlay .field input[type="password"]{padding-right:38px;font-family:var(--mono)}
+#settingsOverlay .p-input{position:relative}
+#settingsOverlay .p-eye{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:30px;height:30px;display:grid;place-items:center;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ink-3);cursor:pointer;padding:0}
+#settingsOverlay .p-eye:hover{color:var(--accent);background:var(--surface-2)}
+#settingsOverlay .p-ico{font-size:16px;line-height:1}
+#settingsOverlay .p-ico.p-ico-on{color:var(--accent)}
+#settingsOverlay .p-select{position:relative}
+#settingsOverlay .p-select select{width:100%;height:40px;padding:0 34px 0 12px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface-2);color:var(--ink);font-size:13px}
+#settingsOverlay .p-select select:focus{outline:2px solid var(--accent);outline-offset:1px}
+#settingsOverlay .p-select .p-select-ico{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--ink-3);font-size:16px;pointer-events:none}
+#settingsOverlay .p-keyrow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#settingsOverlay .p-keyrow label{margin-bottom:0}
+#settingsOverlay .p-tip{display:flex;align-items:flex-start;gap:8px;margin-top:2px;padding:10px 12px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);font-size:12.5px;color:var(--ink-2);line-height:1.55}
+#settingsOverlay .p-tip .p-ico{color:var(--accent);font-size:15px;line-height:1.5;margin-top:1px}
+#settingsOverlay .p-tip p{margin:0}
+#settingsOverlay .p-pill{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:999px;background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent);font-family:var(--mono);font-size:10px;font-weight:600;line-height:14px;white-space:nowrap}
+#settingsOverlay .p-head{margin-bottom:14px}
+.p-head-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.p-lock{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink-2);font-size:11px;font-weight:600}
+.p-lock .p-ico{color:var(--accent);font-size:13px;line-height:1}
+.p-close{width:28px;height:28px;flex-shrink:0;display:grid;place-items:center;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ink-2);cursor:pointer;transition:background .15s,color .15s}
+.p-close:hover{background:var(--surface-2);color:var(--ink)}
+.p-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}
+.p-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent);font-family:var(--mono);font-size:10px;font-weight:600;line-height:14px;white-space:nowrap}
+.p-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.3}}
+.p-callout{display:flex;align-items:flex-start;gap:8px;margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);font-size:12px;color:var(--ink-2);line-height:1.55}
+.p-callout .p-ico{color:var(--accent);font-size:15px;line-height:1.5;margin-top:1px}
+.p-callout code{font-family:var(--mono);font-size:11px;background:var(--surface);border:1px solid var(--line);padding:0 5px;border-radius:6px;color:var(--accent)}
+.p-callout p{margin:0}
+.p-strong{color:var(--ink);font-weight:650}
+/* tab penyedia di modal Pengaturan */
+.p-tabs{display:flex;gap:4px;margin-bottom:16px;padding:4px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px}
+.p-tab{flex:1 1 0;min-width:0;height:34px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--ink-2);font-size:12.5px;font-weight:600;cursor:pointer;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .15s,color .15s}
+.p-tab:hover{color:var(--ink)}
+.p-tab[aria-selected="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.p-pane{display:none}
+.p-pane.active{display:block}
+.opt-tag{display:inline-block;font-size:11px;font-weight:500;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:0 7px;line-height:16px;vertical-align:1px}
 
 .toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,14px);background:var(--toast-bg);color:var(--toast-ink);font-size:13px;padding:10px 18px;border-radius:999px;
   opacity:0;transition:.22s;z-index:2000;pointer-events:none;max-width:90vw;text-align:center}
@@ -195,6 +238,7 @@ button:focus:not(:focus-visible){outline:none}
   .composer{padding:8px 10px calc(8px + env(safe-area-inset-bottom))}
   .modal{padding:20px}
   .p-tab{font-size:11.5px;padding:0 4px}
+  #settingsOverlay .modal{padding:16px;border-radius:20px}
 }
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.01ms!important;transition-duration:.01ms!important}
@@ -338,9 +382,20 @@ button:focus:not(:focus-visible){outline:none}
 <!-- Pengaturan model -->
 <div class="overlay" id="settingsOverlay">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-    <h3 id="setTitle">Pengaturan</h3>
-    <p class="sub">Key milikmu disimpan hanya di browser ini. Kolom key bisa berisi beberapa sekaligus:
-      <code>k1,k2,k3</code> — pada satu key kena limit (429/401), lanjut otomatis ke key berikutnya.</p>
+    <div class="p-head">
+      <div class="p-head-top">
+        <span class="p-lock"><span class="p-ico">lock</span><span>Penyimpanan Lokal Aman</span></span>
+        <button class="p-close" id="settingsClose" type="button" aria-label="Tutup pengaturan"><span class="p-ico">close</span></button>
+      </div>
+      <div class="p-title-row">
+        <h3 id="setTitle">Pengaturan</h3>
+        <span class="p-badge"><i class="p-dot"></i>Auto Key Rotation</span>
+      </div>
+      <div class="p-callout">
+        <span class="p-ico">info</span>
+        <p>Key milikmu disimpan <span class="p-strong">hanya di browser ini</span>. Kolom key bisa berisi: <code>k1,k2,k3</code> — jika kena limit (429/401), otomatis lanjut ke key berikutnya.</p>
+      </div>
+    </div>
 
     <div class="p-tabs" role="tablist" aria-label="Penyedia AI">
       <button class="p-tab" id="pt-gemini" data-p="gemini" role="tab" aria-controls="pane-gemini" aria-selected="true" type="button">Gemini</button>
@@ -349,37 +404,82 @@ button:focus:not(:focus-visible){outline:none}
       <button class="p-tab" id="pt-custom" data-p="custom" role="tab" aria-controls="pane-custom" aria-selected="false" type="button">Custom</button>
     </div>
 
-    <div class="p-pane active" id="pane-gemini" data-pane="gemini" role="tabpanel" aria-labelledby="pt-gemini">
-      <div class="field"><label for="setGemini">Model</label><select id="setGemini"></select></div>
-      <div class="field"><label for="setGeminiKey">API key <span class="opt-tag">opsional</span></label>
-        <input type="password" id="setGeminiKey" autocomplete="off" spellcheck="false" placeholder="AIza… — beberapa key: k1,k2,k3" /></div>
-      <div class="tip">Tanpa key: Worker memakai key owner. Dengan key: kuota Gemini-mu sendiri — model boleh apa pun.</div>
-    </div>
+    <div class="p-content">
+      <div class="p-pane active" id="pane-gemini" data-pane="gemini" role="tabpanel" aria-labelledby="pt-gemini">
+        <div class="field">
+          <label for="setGemini">Model</label>
+          <div class="p-select"><select id="setGemini"></select><span class="p-select-ico">expand_more</span></div>
+        </div>
+        <div class="field">
+          <div class="p-keyrow"><label for="setGeminiKey">API key</label><span class="p-pill">Fallback kuota otomatis</span></div>
+          <div class="p-input">
+            <input type="password" id="setGeminiKey" autocomplete="off" spellcheck="false" placeholder="AIza… — beberapa key: k1,k2,k3" />
+            <button class="p-eye" type="button" data-toggle="setGeminiKey" aria-label="Tampilkan / sembunyikan API key"><span class="p-ico">visibility</span></button>
+          </div>
+        </div>
+        <div class="p-tip">
+          <span class="p-ico">verified_user</span>
+          <p>Tanpa key: Worker memakai key owner. Dengan key: kuota Gemini-mu sendiri — model boleh apa pun.</p>
+        </div>
+      </div>
 
-    <div class="p-pane" id="pane-agnes" data-pane="agnes" role="tabpanel" aria-labelledby="pt-agnes">
-      <div class="field"><label for="setAgnes">Model</label><select id="setAgnes"></select></div>
-      <div class="field"><label for="setAgnesKey">API key <span class="opt-tag">opsional</span></label>
-        <input type="password" id="setAgnesKey" autocomplete="off" spellcheck="false" placeholder="key Agnes… — beberapa key: k1,k2,k3" /></div>
-      <div class="tip">Tanpa key: Worker memakai key owner.</div>
-    </div>
+      <div class="p-pane" id="pane-agnes" data-pane="agnes" role="tabpanel" aria-labelledby="pt-agnes">
+        <div class="field">
+          <label for="setAgnes">Model</label>
+          <div class="p-select"><select id="setAgnes"></select><span class="p-select-ico">expand_more</span></div>
+        </div>
+        <div class="field">
+          <label for="setAgnesKey">API key</label>
+          <div class="p-input">
+            <input type="password" id="setAgnesKey" autocomplete="off" spellcheck="false" placeholder="key Agnes… — beberapa key: k1,k2,k3" />
+            <button class="p-eye" type="button" data-toggle="setAgnesKey" aria-label="Tampilkan / sembunyikan API key"><span class="p-ico">visibility</span></button>
+          </div>
+        </div>
+        <div class="p-tip">
+          <span class="p-ico">table_chart</span>
+          <p>Model khusus optimasi dokumen &amp; tabel terstruktur untuk OCR tingkat lanjut.</p>
+        </div>
+      </div>
 
-    <div class="p-pane" id="pane-cloudflare" data-pane="cloudflare" role="tabpanel" aria-labelledby="pt-cloudflare">
-      <div class="field"><label for="setCf">Model</label><select id="setCf"></select></div>
-      <div class="tip">Lewat binding [ai] Worker — tanpa API key sama sekali. Bila model utama gagal, model lain dicoba otomatis.</div>
-    </div>
+      <div class="p-pane" id="pane-cloudflare" data-pane="cloudflare" role="tabpanel" aria-labelledby="pt-cloudflare">
+        <div class="field">
+          <div class="p-keyrow">
+            <label for="setCf">Model</label>
+            <span class="p-pill"><span class="p-ico">bolt</span>Zero-config / Siap digunakan</span>
+          </div>
+          <div class="p-select"><select id="setCf"></select><span class="p-select-ico">expand_more</span></div>
+        </div>
+        <div class="p-tip">
+          <span class="p-ico">cloud_done</span>
+          <p>Lewat binding <code>[ai]</code> Worker — tanpa API key sama sekali. Bila model utama gagal, model lain dicoba otomatis.</p>
+        </div>
+      </div>
 
-    <div class="p-pane" id="pane-custom" data-pane="custom" role="tabpanel" aria-labelledby="pt-custom">
-      <div class="field"><label for="setCustomUrl">Base URL</label>
-        <input type="url" id="setCustomUrl" inputmode="url" spellcheck="false" placeholder="https://api.openrouter.ai/v1" /></div>
-      <div class="field"><label for="setCustomModel">Model</label>
-        <input type="text" id="setCustomModel" spellcheck="false" placeholder="cth: model-vision-2.5, openai/gpt-4o-mini" /></div>
-      <div class="field"><label for="setCustomKey">API key <span class="opt-tag">opsional</span></label>
-        <input type="password" id="setCustomKey" autocomplete="off" spellcheck="false" placeholder="kosongkan bila endpoint publik tak butuh key" /></div>
-      <div class="tip">Endpoint OpenAI-compatible apa pun (OpenRouter, Groq, vLLM, dsb). Wajib https.</div>
+      <div class="p-pane" id="pane-custom" data-pane="custom" role="tabpanel" aria-labelledby="pt-custom">
+        <div class="field">
+          <label for="setCustomUrl">Base URL</label>
+          <input type="url" id="setCustomUrl" inputmode="url" spellcheck="false" placeholder="https://api.openai.com/v1 atau https://openrouter.ai/api/v1" />
+        </div>
+        <div class="field">
+          <label for="setCustomModel">Model</label>
+          <input type="text" id="setCustomModel" spellcheck="false" placeholder="misal: gpt-4o, claude-3-5-sonnet, deepseek-chat" />
+        </div>
+        <div class="field">
+          <div class="p-keyrow"><label for="setCustomKey">API key</label><span class="p-pill">Opsional</span></div>
+          <div class="p-input">
+            <input type="password" id="setCustomKey" autocomplete="off" spellcheck="false" placeholder="sk-... (opsional jika self-hosted)" />
+            <button class="p-eye" type="button" data-toggle="setCustomKey" aria-label="Tampilkan / sembunyikan API key"><span class="p-ico">visibility</span></button>
+          </div>
+        </div>
+        <div class="p-tip">
+          <span class="p-ico">terminal</span>
+          <p>Endpoint OpenAI-compatible apa pun (OpenRouter, Groq, vLLM, dsb). <span class="p-strong">Wajib https.</span></p>
+        </div>
+      </div>
     </div>
     <div class="modal-actions">
       <button class="btn" id="settingsReset" type="button">Reset</button>
-      <button class="btn primary" id="settingsSave" type="button">Simpan</button>
+      <button class="btn primary" id="settingsSave" type="button"><span class="p-ico">check_circle</span>Simpan Pengaturan</button>
     </div>
   </div>
 </div>
@@ -530,7 +630,7 @@ function showToast(m){toast.textContent=m;toast.classList.add('show');clearTimeo
 let lastFocus=null;
 function openOverlay(el){lastFocus=document.activeElement;el.classList.add('active');modalOpen++;
   /* fokus kontrol pertama yang benar-benar terlihat (pane tab tersembunyi punya offsetParent null) */
-  const f=[...el.querySelectorAll('select,input,button:not(.hidden)')].find((n)=>n.offsetParent!==null);f&&f.focus();}
+  const f=el.querySelector('input,select')||[...el.querySelectorAll('button:not(.hidden)')].find((n)=>n.offsetParent!==null);f&&f.focus();}
 function closeOverlay(el){if(!el.classList.contains('active'))return;el.classList.remove('active');modalOpen=Math.max(0,modalOpen-1);
   lastFocus&&lastFocus.focus&&lastFocus.focus();}
 
@@ -579,13 +679,28 @@ function openSettings(){
 $('settingsBtn').onclick=openSettings;
 modelCaption.onclick=openSettings;
 setOverlay.addEventListener('click',e=>{if(e.target===setOverlay)closeOverlay(setOverlay);});
-$('settingsSave').onclick=()=>{
+$('settingsClose').onclick=()=>closeOverlay(setOverlay);
+document.querySelectorAll('.p-eye').forEach((b)=>b.addEventListener('click',()=>{
+  const inp=document.getElementById(b.dataset.toggle);const ic=b.querySelector('.p-ico');
+  if(!inp||!ic)return;
+  const show=inp.type==='password';
+  inp.type=show?'text':'password';
+  ic.textContent=show?'visibility_off':'visibility';
+  ic.classList.toggle('p-ico-on',!!show);
+}));
+function doSaveSettings(){
   settings.geminiModel=$('setGemini').value;settings.agnesModel=$('setAgnes').value;settings.cfModel=$('setCf').value;
   settings.geminiKey=$('setGeminiKey').value.trim();settings.agnesKey=$('setAgnesKey').value.trim();
   settings.customKey=$('setCustomKey').value.trim();
   settings.customModel=($('setCustomModel').value||'').replace(/[\r\n]+/g,' ').trim().slice(0,120);
   settings.customUrl=($('setCustomUrl').value||'').trim().slice(0,250);
   saveSettings();refreshHome();closeOverlay(setOverlay);showToast('Pengaturan disimpan');
+}
+$('settingsSave').onclick=()=>{
+  const b=$('settingsSave');const orig=b.innerHTML;b.disabled=true;
+  b.innerHTML='<span class="p-ico">sync</span><span>Menyimpan...</span>';
+  setTimeout(()=>{b.innerHTML='<span class="p-ico">done_all</span><span>Tersimpan!</span>';
+    setTimeout(()=>{b.innerHTML=orig;b.disabled=false;doSaveSettings();},1100);},450);
 };
 $('settingsReset').onclick=()=>{
   const p=settings.provider;settings={...DEFAULTS,provider:p};saveSettings();refreshHome();closeOverlay(setOverlay);showToast('Model dikembalikan ke bawaan');
