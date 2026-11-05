@@ -200,7 +200,8 @@ button:focus:not(:focus-visible){outline:none}
 .p-head-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .p-lock{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink-2);font-size:11px;font-weight:600}
 .p-lock .p-ico{color:var(--accent);font-size:13px;line-height:1}
-.p-close{width:28px;height:28px;flex-shrink:0;display:grid;place-items:center;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ink-2);cursor:pointer;transition:background .15s,color .15s}
+.p-close{width:28px;height:28px;flex-shrink:0;display:grid;place-items:center;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ink-2);cursor:pointer;transition:background .15s,color .15s;padding:0}
+.p-close svg{width:14px;height:14px;display:block}
 .p-close:hover{background:var(--surface-2);color:var(--ink)}
 .p-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap}
 .p-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent);font-family:var(--mono);font-size:10px;font-weight:600;line-height:14px;white-space:nowrap}
@@ -405,7 +406,7 @@ button:focus:not(:focus-visible){outline:none}
         <span class="p-lock"><span class="p-ico">lock</span><span>Penyimpanan Lokal Aman</span></span>
         <div class="p-head-actions">
           <button class="p-test" id="testKeyBtn" type="button">Tes Koneksi</button>
-          <button class="p-close" id="settingsClose" type="button" aria-label="Tutup pengaturan"><span class="p-ico">close</span></button>
+          <button class="p-close" id="settingsClose" type="button" aria-label="Tutup pengaturan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
         </div>
       </div>
       <div class="p-title-row">
