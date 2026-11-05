@@ -172,7 +172,7 @@ button:focus:not(:focus-visible){outline:none}
 #settingsOverlay .modal h3{font-size:18px;font-weight:700;margin:0}
 #settingsOverlay .modal-actions{display:flex;justify-content:space-between;gap:12px;margin-top:18px}
 #settingsOverlay .modal-actions .btn{height:40px;padding:0 18px;border-radius:12px;font-size:13px}
-#settingsOverlay .modal-actions .btn.primary{height:40px;flex:1;padding:0 18px;border-radius:12px;font-size:13px;font-weight:600}
+#settingsOverlay .modal-actions .btn.primary{height:40px;flex:1;padding:0 18px;border-radius:12px;font-size:13px;font-weight:600;justify-content:center}
 #settingsOverlay .p-content{flex:1 1 auto;min-height:0;overflow-y:auto}
 #settingsOverlay .field label{font-size:12px;font-weight:500;margin-bottom:6px}
 #settingsOverlay .field input,#settingsOverlay .field select{width:100%;height:40px;padding:0 12px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface-2);color:var(--ink);font-size:13px}
@@ -181,25 +181,26 @@ button:focus:not(:focus-visible){outline:none}
 #settingsOverlay .p-input{position:relative}
 #settingsOverlay .p-eye{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:30px;height:30px;display:grid;place-items:center;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ink-3);cursor:pointer;padding:0}
 #settingsOverlay .p-eye:hover{color:var(--accent);background:var(--surface-2)}
-#settingsOverlay .p-ico{font-size:16px;line-height:1}
+#settingsOverlay .p-ico{font-family:'Material Symbols Outlined';font-weight:400;font-style:normal;font-size:16px;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap}
 #settingsOverlay .p-ico.p-ico-on{color:var(--accent)}
 #settingsOverlay .p-select{position:relative}
 #settingsOverlay .p-select select{width:100%;height:40px;padding:0 34px 0 12px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface-2);color:var(--ink);font-size:13px}
 #settingsOverlay .p-select select:focus{outline:2px solid var(--accent);outline-offset:1px}
+#settingsOverlay .p-select option{color:var(--ink);background:var(--surface)}
 #settingsOverlay .p-select .p-select-ico{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--ink-3);font-size:16px;pointer-events:none}
-#settingsOverlay .p-keyrow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#settingsOverlay .p-keyrow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 #settingsOverlay .p-keyrow label{margin-bottom:0}
 #settingsOverlay .p-tip{display:flex;align-items:flex-start;gap:8px;margin-top:2px;padding:10px 12px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);font-size:12.5px;color:var(--ink-2);line-height:1.55}
 #settingsOverlay .p-tip .p-ico{color:var(--accent);font-size:15px;line-height:1.5;margin-top:1px}
 #settingsOverlay .p-tip p{margin:0}
 #settingsOverlay .p-pill{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:999px;background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent);font-family:var(--mono);font-size:10px;font-weight:600;line-height:14px;white-space:nowrap}
 #settingsOverlay .p-head{margin-bottom:14px}
-.p-head-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.p-head-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .p-lock{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink-2);font-size:11px;font-weight:600}
 .p-lock .p-ico{color:var(--accent);font-size:13px;line-height:1}
 .p-close{width:28px;height:28px;flex-shrink:0;display:grid;place-items:center;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ink-2);cursor:pointer;transition:background .15s,color .15s}
 .p-close:hover{background:var(--surface-2);color:var(--ink)}
-.p-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}
+.p-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap}
 .p-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent);font-family:var(--mono);font-size:10px;font-weight:600;line-height:14px;white-space:nowrap}
 .p-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:pulse 1.6s ease-in-out infinite}
 @keyframes pulse{50%{opacity:.3}}
@@ -212,6 +213,7 @@ button:focus:not(:focus-visible){outline:none}
 .p-test{display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font-size:12px;font-weight:500;cursor:pointer;transition:background .15s,color .15s}
 .p-test:hover{background:var(--surface-2);color:var(--ink)}
 .p-test:disabled{opacity:.55;cursor:not-allowed}
+.p-test.p-testing{opacity:.6;cursor:not-allowed}
 .p-test .p-ico{font-size:14px}
 .p-test-status{margin-top:10px;font-size:12px;line-height:1.5;color:var(--ink-2)}
 .p-test-status.p-test-ok{color:var(--accent)}
@@ -247,6 +249,12 @@ button:focus:not(:focus-visible){outline:none}
   .modal{padding:20px}
   .p-tab{font-size:11.5px;padding:0 4px}
   #settingsOverlay .modal{padding:16px;border-radius:20px}
+}
+@media(max-width:400px){
+  #settingsOverlay .modal{padding:14px;border-radius:18px}
+  #settingsOverlay .modal-actions{gap:8px}
+  #settingsOverlay .modal-actions .btn{height:38px;padding:0 14px;font-size:12px;border-radius:11px}
+  #settingsOverlay .modal-actions .btn.primary{height:38px;font-size:12px}
 }
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.01ms!important;transition-duration:.01ms!important}
