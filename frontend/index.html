@@ -709,6 +709,7 @@ function setTestStatus(m,ok){
 }
 $('testKeyBtn').onclick=async()=>{
   const btn=$('testKeyBtn');const id=++testSeq;
+  const base=CONFIG.WORKER_URL.replace(/\/+$/,'');
   btn.disabled=true;btn.classList.add('p-testing');
   setTestStatus('Menguji koneksi...',false);
   const payload={provider:provider};
