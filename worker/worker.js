@@ -304,6 +304,7 @@ function normalizeProvider(p) {
   if (p === 'gemini' || p.startsWith('gemini')) return 'gemini';
   if (p === 'agnes' || p.startsWith('agnes')) return 'agnes';
   if (p === 'cloudflare' || p === 'cf') return 'cloudflare';
+  if (p === 'custom' || p.startsWith('custom')) return 'custom';
   return null;
 }
 function pickGeminiModel(req, env, byok) {
