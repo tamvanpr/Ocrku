@@ -4,7 +4,7 @@
 // CATATAN DEPLOY: folder functions/ HARUS di root repo (sejajar frontend/), LEBIH
 // ANDAL untuk Pages Git build: kalau functions/ taruh di dalam folder yang jadi
 // Build output directory, sering tidak ikut ter-upload dan API membalas HTML/405.
-const API_PATHS = new Set(['/ocr', '/edit', '/health']);
+const API_PATHS = new Set(['/ocr', '/edit', '/health', '/test']);
 
 // Pembalas JSON agar frontend selalu menerima JSON, bukan halaman error HTML.
 const jsonRes = (body, status = 200) =>
