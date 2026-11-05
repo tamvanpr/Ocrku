@@ -720,7 +720,7 @@ $('testKeyBtn').onclick=async()=>{
     const data=await resp.json().catch(()=>({}));
     if(id!==testSeq)return;
     if(resp.ok&&data.ok){
-      setTestStatus('Terverifikasi: koneksi '+(PROVIDERS[provider]?.label||'AI')+' aktif.'+(data.detail?' — '+data.detail:''),true);
+      setTestStatus('Terverifikasi: '+(data.detail||'Koneksi aktif.'),true);
       btn.classList.remove('p-testing');btn.disabled=false;
     }else{
       setTestStatus('Gagal: '+(data.error||'Server error '+resp.status+'.'),false);
@@ -742,8 +742,8 @@ function doSaveSettings(){
 }
 $('settingsSave').onclick=()=>{
   const b=$('settingsSave');const orig=b.innerHTML;b.disabled=true;
-  b.innerHTML='<span class="p-ico">sync</span><span>Menyimpan...</span>';
-  setTimeout(()=>{b.innerHTML='<span class="p-ico">done_all</span><span>Tersimpan!</span>';
+  b.innerHTML='<span class="spinner"></span><span>Menyimpan...</span>';
+  setTimeout(()=>{b.innerHTML='<span class="spinner"></span><span>Tersimpan!</span>';
     setTimeout(()=>{b.innerHTML=orig;b.disabled=false;doSaveSettings();},1100);},450);
 };
 $('settingsReset').onclick=()=>{
