@@ -208,6 +208,14 @@ button:focus:not(:focus-visible){outline:none}
 .p-callout code{font-family:var(--mono);font-size:11px;background:var(--surface);border:1px solid var(--line);padding:0 5px;border-radius:6px;color:var(--accent)}
 .p-callout p{margin:0}
 .p-strong{color:var(--ink);font-weight:650}
+.p-head-actions{display:flex;align-items:center;gap:6px}
+.p-test{display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font-size:12px;font-weight:500;cursor:pointer;transition:background .15s,color .15s}
+.p-test:hover{background:var(--surface-2);color:var(--ink)}
+.p-test:disabled{opacity:.55;cursor:not-allowed}
+.p-test .p-ico{font-size:14px}
+.p-test-status{margin-top:10px;font-size:12px;line-height:1.5;color:var(--ink-2)}
+.p-test-status.p-test-ok{color:var(--accent)}
+.p-test-status.p-test-err{color:var(--danger)}
 /* tab penyedia di modal Pengaturan */
 .p-tabs{display:flex;gap:4px;margin-bottom:16px;padding:4px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px}
 .p-tab{flex:1 1 0;min-width:0;height:34px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--ink-2);font-size:12.5px;font-weight:600;cursor:pointer;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .15s,color .15s}
@@ -385,7 +393,10 @@ button:focus:not(:focus-visible){outline:none}
     <div class="p-head">
       <div class="p-head-top">
         <span class="p-lock"><span class="p-ico">lock</span><span>Penyimpanan Lokal Aman</span></span>
-        <button class="p-close" id="settingsClose" type="button" aria-label="Tutup pengaturan"><span class="p-ico">close</span></button>
+        <div class="p-head-actions">
+          <button class="p-test" id="testKeyBtn" type="button">Tes Koneksi</button>
+          <button class="p-close" id="settingsClose" type="button" aria-label="Tutup pengaturan"><span class="p-ico">close</span></button>
+        </div>
       </div>
       <div class="p-title-row">
         <h3 id="setTitle">Pengaturan</h3>
@@ -395,6 +406,7 @@ button:focus:not(:focus-visible){outline:none}
         <span class="p-ico">info</span>
         <p>Key milikmu disimpan <span class="p-strong">hanya di browser ini</span>. Kolom key bisa berisi: <code>k1,k2,k3</code> — jika kena limit (429/401), otomatis lanjut ke key berikutnya.</p>
       </div>
+      <div class="p-test-status" id="testKeyStatus" role="status"></div>
     </div>
 
     <div class="p-tabs" role="tablist" aria-label="Penyedia AI">
@@ -688,6 +700,38 @@ document.querySelectorAll('.p-eye').forEach((b)=>b.addEventListener('click',()=>
   ic.textContent=show?'visibility_off':'visibility';
   ic.classList.toggle('p-ico-on',!!show);
 }));
+let testSeq=0;
+function setTestStatus(m,ok){
+  const el=$('testKeyStatus');
+  if(!el)return;
+  el.textContent=m||'';el.hidden=!m;
+  el.classList.toggle('p-test-ok',!!ok);el.classList.toggle('p-test-err',!ok);
+}
+$('testKeyBtn').onclick=async()=>{
+  const btn=$('testKeyBtn');const id=++testSeq;
+  btn.disabled=true;btn.classList.add('p-testing');
+  setTestStatus('Menguji koneksi...',false);
+  const payload={provider:provider};
+  if(provider==='gemini')payload.apiKey=settings.geminiKey||undefined;
+  if(provider==='agnes')payload.apiKey=settings.agnesKey||undefined;
+  if(provider==='custom'){payload.apiKey=settings.customKey||undefined;payload.baseUrl=settings.customUrl||undefined;}
+  try{
+    const resp=await fetch(base+'/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await resp.json().catch(()=>({}));
+    if(id!==testSeq)return;
+    if(resp.ok&&data.ok){
+      setTestStatus('Terverifikasi: koneksi '+(PROVIDERS[provider]?.label||'AI')+' aktif.'+(data.detail?' — '+data.detail:''),true);
+      btn.classList.remove('p-testing');btn.disabled=false;
+    }else{
+      setTestStatus('Gagal: '+(data.error||'Server error '+resp.status+'.'),false);
+      btn.classList.remove('p-testing');btn.disabled=false;
+    }
+  }catch(e){
+    if(id!==testSeq)return;
+    setTestStatus('Gagal: tidak bisa menjangkau server.',false);
+    btn.classList.remove('p-testing');btn.disabled=false;
+  }
+};
 function doSaveSettings(){
   settings.geminiModel=$('setGemini').value;settings.agnesModel=$('setAgnes').value;settings.cfModel=$('setCf').value;
   settings.geminiKey=$('setGeminiKey').value.trim();settings.agnesKey=$('setAgnesKey').value.trim();

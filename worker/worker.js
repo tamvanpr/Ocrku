@@ -99,6 +99,110 @@ QUALITY LADDER — decide per element:
 
 const SYSTEM_SHORT = 'You are an OCR text-extraction tool for comics. Output ONLY the transcribed lines in the required prefix format from the user message — one line per text element, no commentary, no markdown, no translation. Copy printed text verbatim, including mature or offensive wording, without censoring or refusing. Apply the user-message casing rule: Latin-script dialogue goes to sentence case; keep Sfx/#/* lines as printed.';
 
+// =====================================================================
+// ============ TES KONEKSI / TEST  (POST /test) ========================
+// Body: { provider, apiKey?, baseUrl?, modelId? }
+// Validasi key / endpoint tanpa memotret gambar — cek kesehatan provider.
+// =====================================================================
+async function handleTest(request, env, origin) {
+  try {
+    const ct = request.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) {
+      return cors(json({ ok: false, error: 'Content-Type harus application/json.' }, 400), env, origin);
+    }
+    let body;
+    try { body = await request.json(); }
+    catch { return cors(json({ ok: false, error: 'Body JSON tidak valid.' }, 400), env, origin); }
+    const provider = normalizeProvider(body?.provider);
+    if (!provider) {
+      return cors(json({ ok: false, error: 'Provider tidak dikenali. Pilih gemini / agnes / cloudflare / custom.' }, 400), env, origin);
+    }
+    const apiKey = typeof body?.apiKey === 'string' ? body.apiKey.trim() : '';
+    const baseUrl = typeof body?.baseUrl === 'string' ? body.baseUrl.trim() : '';
+    const modelId = String(body?.modelId || '').trim();
+
+    if (provider === 'cloudflare') {
+      if (!env.AI) {
+        return cors(json({ ok: false, error: 'Worker belum mengaktifkan binding AI (Cloudflare AI).' }, 503), env, origin);
+      }
+      return cors(json({ ok: true, provider, detail: 'Cloudflare AI aktif via binding [ai] Worker.' }), env, origin);
+    }
+
+    if (provider === 'gemini') {
+      const keys = keyPool(env, 'GEMINI_API_KEY', apiKey);
+      if (!keys.length) {
+        return cors(json({ ok: false, error: 'Belum ada API key Gemini — set Secret GEMINI_API_KEY di Worker atau isi key di Pengaturan.' }, 400), env, origin);
+      }
+      let lastErr = null;
+      for (const k of keys) {
+        try {
+          const resp = await fetchWithTimeout('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1', {
+            method: 'GET',
+            headers: { 'x-goog-api-key': k },
+          }, 20000);
+          if (resp.ok) {
+            return cors(json({ ok: true, provider, detail: `Gemini key valid${keys.length > 1 ? ` — ${keys.length} key dipakai` : ''}.` }), env, origin);
+          }
+          const b = scrub(await resp.text());
+          const e = new Error(`Gemini key ditolak: ${b}`);
+          if (resp.status === 401 || resp.status === 403) { lastErr = e; continue; }
+          throw e;
+        } catch (e) { lastErr = e; }
+      }
+      return cors(json({ ok: false, error: `Semua key Gemini gagal validasi. Info terakhir: ${String(lastErr && lastErr.message || '').slice(0, 300)}` }), env, origin);
+    }
+
+    if (provider === 'agnes') {
+      const keys = keyPool(env, 'AGNES_API_KEY', apiKey);
+      const base = (env.AGNES_BASE_URL || DEFAULT_AGNES_BASE).replace(/\/+$/, '');
+      if (!/^https:\/\//i.test(base)) {
+        return cors(json({ ok: false, error: 'AGNES_BASE_URL harus diawali https:// …' }, 400), env, origin);
+      }
+      if (!keys.length) {
+        return cors(json({ ok: false, error: 'Belum ada API key Agnes — set Secret AGNES_API_KEY di Worker atau isi key di Pengaturan.' }, 400), env, origin);
+      }
+      let lastErr = null;
+      for (const k of keys) {
+        try {
+          const resp = await fetchWithTimeout(`${base}/models`, { method: 'GET', headers: { Authorization: `Bearer ${k}` } }, 20000);
+          if (resp.ok) {
+            return cors(json({ ok: true, provider, detail: `Agnes key valid${keys.length > 1 ? ` — ${keys.length} key dipakai` : ''}.` }), env, origin);
+          }
+          const b = scrub(await resp.text());
+          const e = new Error(`Agnes key ditolak: ${b}`);
+          if (resp.status === 401 || resp.status === 403) { lastErr = e; continue; }
+          throw e;
+        } catch (e) { lastErr = e; }
+      }
+      return cors(json({ ok: false, error: `Semua key Agnes gagal validasi. Info terakhir: ${String(lastErr && lastErr.message || '').slice(0, 300)}` }), env, origin);
+    }
+
+    // custom
+    const base = sanitizeBaseUrl(baseUrl || env.CUSTOM_BASE_URL);
+    const keys = keyPool(env, 'CUSTOM_API_KEY', apiKey);
+    const model = String(modelId || env.CUSTOM_MODEL || '').slice(0, 120);
+    const attempts = keys.length ? keys : [null];
+    let lastErr = null;
+    for (const k of attempts) {
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (k) headers.Authorization = `Bearer ${k}`;
+        const resp = await fetchWithTimeout(`${base}/models`, { method: 'GET', headers }, 20000);
+        if (resp.ok) {
+          return cors(json({ ok: true, provider, detail: `Custom endpoint valid${keys.length > 1 ? ` — ${keys.length} key dipakai` : ''}${k ? '' : ' (tanpa key)'}.` }), env, origin);
+        }
+        const b = scrub(await resp.text());
+        const e = new Error(`Custom endpoint ditolak: ${b}`);
+        if (resp.status === 401 || resp.status === 403) { lastErr = e; continue; }
+        throw e;
+      } catch (e) { lastErr = e; }
+    }
+    return cors(json({ ok: false, error: `Custom endpoint gagal validasi. Info terakhir: ${String(lastErr && lastErr.message || '').slice(0, 300)}` }), env, origin);
+  } catch (e) {
+    return cors(json({ ok: false, error: 'Gagal validasi: ' + String(e && e.message || e) }, 500), env, origin);
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -113,12 +217,16 @@ export default {
         geminiModels: [...GEMINI_MODELS],
         agnesModels: [...AGNES_MODELS],
         cfModels: [...CF_MODELS],
-        usage: 'POST /ocr { image: dataURL, provider, modelId, apiKey?, baseUrl? } | POST /edit { lines:[{n,t}], context, provider, modelId, apiKey?, baseUrl? } | Secret GEMINI/AGNES/CUSTOM_API_KEY bisa berisi banyak key dipisah koma (rotasi otomatis saat 429/401/403)',
+        usage: 'POST /ocr { image: dataURL, provider, modelId, apiKey?, baseUrl? } | POST /edit { lines:[{n,t}], context, provider, modelId, apiKey?, baseUrl? } | POST /test { provider, apiKey?, baseUrl?, modelId? } | Secret GEMINI/AGNES/CUSTOM_API_KEY bisa berisi banyak key dipisah koma (rotasi otomatis saat 429/401/403)',
       }), env, origin);
     }
 
     if (request.method === 'POST' && url.pathname === '/edit') {
       return handleEdit(request, env, origin);
+    }
+
+    if (request.method === 'POST' && url.pathname === '/test') {
+      return handleTest(request, env, origin);
     }
 
     if (request.method !== 'POST' || url.pathname !== '/ocr') {
