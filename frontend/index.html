@@ -162,6 +162,15 @@ button:focus:not(:focus-visible){outline:none}
 .field input,.field select{width:100%;height:40px;padding:0 10px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--ink);font-size:13px}
 .field input:focus,.field select:focus{outline:2px solid var(--accent);outline-offset:1px}
 .field .tip{font-size:12px;color:var(--ink-3);margin-top:5px;line-height:1.5}
+/* tab penyedia di modal Pengaturan */
+.p-tabs{display:flex;gap:4px;margin-bottom:16px;padding:4px;background:var(--surface-2);border-radius:12px}
+.p-tab{flex:1 1 0;min-width:0;height:34px;border:0;border-radius:9px;background:transparent;color:var(--ink-2);font-size:12.5px;font-weight:600;cursor:pointer;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-tab:hover{color:var(--ink)}
+.p-tab[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.p-pane{display:none}
+.p-pane.active{display:block}
+.opt-tag{display:inline-block;font-size:11px;font-weight:500;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:0 7px;line-height:16px;vertical-align:1px}
+.modal .sub code{font-family:var(--mono);font-size:11.5px;padding:1px 5px;border-radius:6px;background:var(--surface-2);border:1px solid var(--line)}
 .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
 .modal .btn{height:38px;padding:0 20px}
 
@@ -185,6 +194,7 @@ button:focus:not(:focus-visible){outline:none}
   .avatar{display:none}
   .composer{padding:8px 10px calc(8px + env(safe-area-inset-bottom))}
   .modal{padding:20px}
+  .p-tab{font-size:11.5px;padding:0 4px}
 }
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.01ms!important;transition-duration:.01ms!important}
@@ -328,29 +338,45 @@ button:focus:not(:focus-visible){outline:none}
 <!-- Pengaturan model -->
 <div class="overlay" id="settingsOverlay">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-    <h3 id="setTitle">Penyedia AI</h3>
-    <p class="sub">Penyedia dipilih lewat menu di header. API key milikmu (BYOK, opsional) disimpan
-      hanya di browser ini dan hanya dikirim ke Worker-mu sendiri — tidak pernah masuk log/repo.
-      Isi beberapa key dipisah koma: saat satu key kena limit (429/401), otomatis dilanjutkan ke key berikutnya.</p>
+    <h3 id="setTitle">Pengaturan</h3>
+    <p class="sub">Key milikmu disimpan hanya di browser ini. Kolom key bisa berisi beberapa sekaligus:
+      <code>k1,k2,k3</code> — pada satu key kena limit (429/401), lanjut otomatis ke key berikutnya.</p>
 
-    <div class="field"><label for="setGemini">Model Gemini</label><select id="setGemini"></select></div>
-    <div class="field"><label for="setGeminiKey">API key Gemini (opsional)</label>
-      <input type="password" id="setGeminiKey" autocomplete="off" spellcheck="false" placeholder="AIza… — beberapa key: k1,k2,k3" /></div>
-
-    <div class="field"><label for="setAgnes">Model Agnes AI</label><select id="setAgnes"></select></div>
-    <div class="field"><label for="setAgnesKey">API key Agnes (opsional)</label>
-      <input type="password" id="setAgnesKey" autocomplete="off" spellcheck="false" placeholder="key Agnes… — beberapa key: k1,k2,k3" /></div>
-
-    <div class="field"><label for="setCf">Model Cloudflare</label><select id="setCf"></select>
-      <div class="tip">Qwen jadi pilihan utama. Model lain dipakai otomatis bila yang utama gagal. (Lewat binding [ai] Worker — tanpa API key.)</div>
+    <div class="p-tabs" role="tablist" aria-label="Penyedia AI">
+      <button class="p-tab" id="pt-gemini" data-p="gemini" role="tab" aria-controls="pane-gemini" aria-selected="true" type="button">Gemini</button>
+      <button class="p-tab" id="pt-agnes" data-p="agnes" role="tab" aria-controls="pane-agnes" aria-selected="false" type="button">Agnes</button>
+      <button class="p-tab" id="pt-cloudflare" data-p="cloudflare" role="tab" aria-controls="pane-cloudflare" aria-selected="false" type="button">Cloudflare</button>
+      <button class="p-tab" id="pt-custom" data-p="custom" role="tab" aria-controls="pane-custom" aria-selected="false" type="button">Custom</button>
     </div>
 
-    <div class="field"><label for="setCustomUrl">Custom — Base URL (endpoint OpenAI-compatible)</label>
-      <input type="url" id="setCustomUrl" inputmode="url" spellcheck="false" placeholder="https://api.openrouter.ai/v1" /></div>
-    <div class="field"><label for="setCustomModel">Custom — Model</label>
-      <input type="text" id="setCustomModel" spellcheck="false" placeholder="cth: model-vision-2.5, openai/gpt-4o-mini, …" /></div>
-    <div class="field"><label for="setCustomKey">Custom — API key (opsional)</label>
-      <input type="password" id="setCustomKey" autocomplete="off" spellcheck="false" placeholder="kosongkan bila endpoint-mu tak butuh key / pakai Secret CUSTOM_API_KEY di Worker" /></div>
+    <div class="p-pane active" id="pane-gemini" data-pane="gemini" role="tabpanel" aria-labelledby="pt-gemini">
+      <div class="field"><label for="setGemini">Model</label><select id="setGemini"></select></div>
+      <div class="field"><label for="setGeminiKey">API key <span class="opt-tag">opsional</span></label>
+        <input type="password" id="setGeminiKey" autocomplete="off" spellcheck="false" placeholder="AIza… — beberapa key: k1,k2,k3" /></div>
+      <div class="tip">Tanpa key: Worker memakai key owner. Dengan key: kuota Gemini-mu sendiri — model boleh apa pun.</div>
+    </div>
+
+    <div class="p-pane" id="pane-agnes" data-pane="agnes" role="tabpanel" aria-labelledby="pt-agnes">
+      <div class="field"><label for="setAgnes">Model</label><select id="setAgnes"></select></div>
+      <div class="field"><label for="setAgnesKey">API key <span class="opt-tag">opsional</span></label>
+        <input type="password" id="setAgnesKey" autocomplete="off" spellcheck="false" placeholder="key Agnes… — beberapa key: k1,k2,k3" /></div>
+      <div class="tip">Tanpa key: Worker memakai key owner.</div>
+    </div>
+
+    <div class="p-pane" id="pane-cloudflare" data-pane="cloudflare" role="tabpanel" aria-labelledby="pt-cloudflare">
+      <div class="field"><label for="setCf">Model</label><select id="setCf"></select></div>
+      <div class="tip">Lewat binding [ai] Worker — tanpa API key sama sekali. Bila model utama gagal, model lain dicoba otomatis.</div>
+    </div>
+
+    <div class="p-pane" id="pane-custom" data-pane="custom" role="tabpanel" aria-labelledby="pt-custom">
+      <div class="field"><label for="setCustomUrl">Base URL</label>
+        <input type="url" id="setCustomUrl" inputmode="url" spellcheck="false" placeholder="https://api.openrouter.ai/v1" /></div>
+      <div class="field"><label for="setCustomModel">Model</label>
+        <input type="text" id="setCustomModel" spellcheck="false" placeholder="cth: model-vision-2.5, openai/gpt-4o-mini" /></div>
+      <div class="field"><label for="setCustomKey">API key <span class="opt-tag">opsional</span></label>
+        <input type="password" id="setCustomKey" autocomplete="off" spellcheck="false" placeholder="kosongkan bila endpoint publik tak butuh key" /></div>
+      <div class="tip">Endpoint OpenAI-compatible apa pun (OpenRouter, Groq, vLLM, dsb). Wajib https.</div>
+    </div>
     <div class="modal-actions">
       <button class="btn" id="settingsReset" type="button">Reset</button>
       <button class="btn primary" id="settingsSave" type="button">Simpan</button>
@@ -503,7 +529,8 @@ function showToast(m){toast.textContent=m;toast.classList.add('show');clearTimeo
 /* ---------- modal (Escape, fokus kembali, blokir Enter global) ---------- */
 let lastFocus=null;
 function openOverlay(el){lastFocus=document.activeElement;el.classList.add('active');modalOpen++;
-  const f=el.querySelector('select,button:not(.hidden)');f&&f.focus();}
+  /* fokus kontrol pertama yang benar-benar terlihat (pane tab tersembunyi punya offsetParent null) */
+  const f=[...el.querySelectorAll('select,input,button:not(.hidden)')].find((n)=>n.offsetParent!==null);f&&f.focus();}
 function closeOverlay(el){if(!el.classList.contains('active'))return;el.classList.remove('active');modalOpen=Math.max(0,modalOpen-1);
   lastFocus&&lastFocus.focus&&lastFocus.focus();}
 
@@ -532,6 +559,11 @@ function fillSelect(el,list,val){
   list.forEach(m=>{const o=document.createElement('option');o.value=m.id;o.textContent=m.id+' — '+m.desc;el.appendChild(o);});
   el.value=list.some(m=>m.id===val)?val:list[0].id;
 }
+function setProvTab(p){
+  document.querySelectorAll('.p-tab').forEach((b)=>b.setAttribute('aria-selected',String(b.dataset.p===p)));
+  document.querySelectorAll('.p-pane').forEach((pn)=>pn.classList.toggle('active',pn.dataset.pane===p));
+}
+document.querySelectorAll('.p-tab').forEach((b)=>b.addEventListener('click',()=>setProvTab(b.dataset.p)));
 function openSettings(){
   fillSelect($('setGemini'),PROVIDERS.gemini.models,settings.geminiModel);
   fillSelect($('setAgnes'),PROVIDERS.agnes.models,settings.agnesModel);
@@ -541,6 +573,7 @@ function openSettings(){
   $('setCustomUrl').value=settings.customUrl||'';
   $('setCustomModel').value=settings.customModel||'';
   $('setCustomKey').value=settings.customKey||'';
+  setProvTab(provider); /* buka pada tab penyedia yang sedang aktif di header */
   openOverlay(setOverlay);
 }
 $('settingsBtn').onclick=openSettings;
