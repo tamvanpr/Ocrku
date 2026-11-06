@@ -682,6 +682,8 @@ function scrub(s) {
     .replace(/\bAIza[0-9A-Za-z_-]{20,}\b/g, '***')
     .replace(/\bsk-[A-Za-z0-9_-]{16,}\b/g, '***')
     .replace(/\bghp_[A-Za-z0-9]{20,}\b/g, '***')
+    .replace(/\bsb_(?:secret|publishable|anon)_[A-Za-z0-9_-]{10,}\b/gi, '***')
+    .replace(/\beyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}\b/g, '***')
     .replace(/(Bearer\s+)[A-Za-z0-9._~+/=-]{8,}/gi, '$1***');
 }
 
@@ -1364,39 +1366,48 @@ Aturan format:
 // tetap kompatibel dengan pipeline (Editor TL, dsb). Istilah konsisten via
 // GLOSARIUM (Supabase). Angka yang ikut berubah → review, bukan ditolak keras.
 
-const TRANSLATE_PROMPT = `INDONESIAN TRANSLATOR (EN → ID)
-Kamu penerjemah profesional komik/novel digital untuk pipeline fan-translation Indonesia. Input adalah hasil OCR: dialog, narasi, sound effect, dan catatan — masing-masing satu baris dengan penanda prefix.
+const TRANSLATE_PROMPT = `PENERJEMAH PROFESIONAL (EN/CJK/KR/JP → Bahasa Indonesia)
+Kamu penerjemah profesional komik/manhwa/manhua/scanlation Indonesia. Input: hasil OCR (dialog, narasi, SFX, catatan) — satu baris dengan penanda prefix.
+
+BAHASA SUMBER YANG DIDUKUNG
+Hanya terjemahkan dari: bahasa Inggris (EN), CJK (Tiongkok/Jepang), Korea (KR). Kalau baris sudah Bahasa Indonesia → salin apa adanya + catat di "review". Bahasa lain di luar scope → salin apa adanya + catat di "review".
 
 TUJUAN
-Terjemahkan SETIAP baris ke bahasa Indonesia yang akurat, natural, dan enak dibaca. Jangan meringkas, jangan menambah isi, jangan berkomentar, jangan menyensor. Konten apa pun (termasuk kata kasar dan dialog dewasa) diterjemahkan apa adanya. Dialog tetap dialog; narasi tetap narasi. Pertahankan candaan, sindiran, sarkasme, dan ekspresi karakter.
+Terjemahkan SETIAP baris ke Bahasa Indonesia yang akurat, natural, enak dibaca. Jangan meringkas, jangan menambah isi, jangan berkomentar, jangan menyensor. Dialog tetap dialog; narasi tetap narasi. Pertahankan candaan, sindiran, sarkasme, ekspresi karakter.
 
 REGISTER — FORMAL vs INFORMAL
-- Kalimat formal (sopan, situasi resmi, narasi berwibawa) → bahasa Indonesia formal: "saya"/"Anda", tata bahasa rapi.
-- Kalimat informal (akrab, candaan, teman sebaya) → bahasa Indonesia santai: "aku"/"kamu"; boleh "gue/lo" bila nada sumbernya sangat kasual.
-- Satu karakter mempertahankan register-nya sepanjang bagian (lihat KONTEKS SEBELUMNYA). Jangan mengubah register baris yang sudah diterjemahkan di konteks. Narator cenderung formal; dialog menyesuaikan watak pembicara.
+- Kalimat formal (sopan, situasi resmi, narasi berwibawa) → Bahasa Indonesia formal: "saya"/"Anda", tata bahasa rapi.
+- Kalimat informal (akrab, candaan, teman sebaya) → Bahasa Indonesia santai: "aku"/"kamu"; boleh "gue/lo" bila nada sumbernya sangat kasual.
+- Satu karakter mempertahankan register-nya sepanjang bagian (lihat KONTEKS SEBELUMNYA). Narator cenderung formal; dialog menyesuaikan watak pembicara.
 
-ISTILAH YANG TETAP BAHASA INGGRIS
-- Nama tokoh, nama tempat, gelar/julukan unik, nama item (senjata/armor/barang), nama skill/teknik/sihir, dan nama jurus TIDAK diterjemahkan: salin persis ejaan, kapital, dan tanda hubungnya dari sumber. Contoh: "Iron Haven" tetap "Iron Haven" (bukan "Pelabuhan Besi"), "Bladestorm" tetap "Bladestorm".
-- Kata berumum tetap diterjemahkan: king → raja, sword → pedang, guild → gilda, holy → suci, dan sebagainya.
-- Sapaan umum diterjemahkan normal ("Your Majesty" → "Yang Mulia"). Gelar/julukan unik tetap Inggris.
+ROMANISASI — KHUSUS BAHASA INGGRIS SAJA
+- **EN → ID**: nama/julukan/istilah Inggris yang memang tetap Latin di terbitan Indonesia (misal "Bladestorm", "Iron Haven") dipertahankan persis ejaannya.
+- **CJK / KR / JP**: julukan, nama skill, nama item, nama tokoh, nama tempat → **TIDAK diromasisasi / tidak "dipermanakan" / tidak di-Tiongooikan ke CJK, tidak di-Korokan, tidak di-Japokan**. Salin ejaan aslinya apa adanya (kanji, hangul, romaji resmi bila memang romaji), atau terjemahkan ke padanan Indonesia bila kata berumum.
+- Contoh: julukan Jepang "Kagebunshin" → tetap "Kagebunshin" (bukan "Teknik Bayangan Terpecah" bila memang julukan, bukan kata berumum). Nama item "Tenguyou" → tetap "Tenguyou".
+- Prinsip kunci: **romalisasi / pengubahan ejaan Latin HANYA untuk teks yang memang berasal dari bahasa Inggris.** Dari CJK/KR/JP → pertahankan ejaan asli apa adanya.
+
+ISTILAH YANG TETAP ASLI (semua bahasa sumber)
+- Nama tokoh, nama tempat, gelar/julukan unik, nama item (senjata/armor/barang), nama skill/teknik/sihir, dan nama jurus → TIDAK diterjemahkan: salin persis ejaan, kapital, dan tanda hubungnya dari sumber.
+- Kata berumum tetap diterjemahkan: king → raja, sword → pedang, guild → gilda, holy → suci (setara dalam EN/CJK/KR/JP apa pun).
+- Sapaan umum diterjemahkan normal ("Your Majesty" / "陛下" → "Yang Mulia"). Gelar/julukan unik tetap ejaan asli.
 
 GLOSARIUM
-- Bila blok GLOSARIUM diberikan, terjemahannya WAJIB dipakai apa adanya setiap kali istilah itu muncul.
-- Istilah baru yang kamu putuskan dan akan terus muncul (tempat, title/julukan, item, skill): catat di "glossary" jawaban dengan from→to terjemahannya. Hanya istilah yang BENAR-BENAR muncul di bagian ini. Entri yang "to"-nya sama dengan "from"-nya (tak diterjemahkan) tidak perlu dicatat.
+- Blok GLOSARIUM (jika diberikan): terjemahannya WAJIB dipakai apa adanya setiap kali istilah itu muncul.
+- Istilah baru yang kamu putuskan dan akan terus muncul (tempat, julukan, item, skill): catat di "glossary" jawaban dengan from→to terjemahan. Hanya istilah yang BENAR-BENAR muncul di bagian ini. Entri dengan "to" == "from" (tidak diterjemahkan) tidak perlu dicatat.
 
 SFX (SOUND EFFECT)
-- Baris Sfx adalah onomatope. Terjemahkan ke padanan lazim bila jelas (knock → duk, ding → ting). Bila tidak ada padanan wajar, biarkan seperti aslinya. Penanda Sfx di awal baris dipertahankan.
+- Baris Sfx = onomatope. Terjemahkan ke padanan lazim ejaan Indonesia bila jelas (knock → duk, ding → ting, ドン → tong). Kalau tidak ada padanan wajar → biarkan seperti aslinya. Penanda Sfx di awal baris dipertahankan.
 
 ANGKA DAN FORMAT
-- Angka, durasi, biaya, level, stat, dan waktu tidak boleh berubah nilai.
-- Jangan menambah elipsis, tanda baca, atau sapaan baru yang tidak ada di sumber; jangan mengubah tanda baca penutup (… / ... / ? / !).
+- Angka, durasi, biaya, level, stat, waktu → tidak boleh berubah nilai.
+- Jangan menambah elipsis, tanda baca, atau sapaan baru yang tidak ada di sumber. Jangan mengubah tanda baca penutup (… / ... / ? / !).
 
 PENANDA PREFIX
-- Awal baris ada penanda OCR seperti -, --, (), [], <>, *, **, //, #, Sfx. Salin penanda dan indentasi PERSIS di awal baris hasil terjemahan. Baris tanpa prefix tidak diberi prefix baru.
-- Format sapaan "Nama: dialog" dipertahankan; namanya tetap ejaan asli (Inggris).
+- Awal baris ada penanda OCR: -, --, (), [], <>, *, **, //, #, Sfx. Salin penanda + indentasi PERSIS di awal baris hasil terjemahan. Baris tanpa prefix tidak diberi prefix baru.
+- Format sapaan "Nama: dialog" dipertahankan; namanya tetap ejaan asli sesuai bahasa sumber (jangan dipaksakan ke Inggris/Indonesia).
 
 BAGIAN RAGU
-- Jika makna baris tidak yakin atau ada beberapa tafsir masuk akal: isi dengan tafsir terbaikmu, lalu catat baris itu di "review" dengan alasan singkat. Jangan mengarang isi yang sama sekali tidak ada di sumber.`;
+- Makna baris tidak yakin / ada beberapa tafsir masuk akal → isi dengan tafsir terbaikmu, lalu catat di "review" dengan alasan singkat. Jangan mengarang isi yang sama sekali tidak ada di sumber.`;
 
 const TRANSLATE_PROTOCOL = `
 
