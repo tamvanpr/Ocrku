@@ -1,5 +1,5 @@
 {
   "version": 1,
-  "include": ["/ocr", "/edit", "/health", "/test"],
+  "include": ["/ocr", "/edit", "/translate", "/models", "/glossary", "/health", "/test"],
   "exclude": []
 }

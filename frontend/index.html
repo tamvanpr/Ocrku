@@ -270,11 +270,13 @@ button:focus:not(:focus-visible){outline:none}
 .tab:hover{background:var(--surface-2)}
 .tab[aria-selected="true"]{background:var(--accent-soft);color:var(--accent)}
 
-/* ---------- editor TL ---------- */
-.editor{display:none;flex:1;min-height:0;overflow-y:auto;padding:14px 16px;background:var(--bg);flex-direction:column;gap:12px;overscroll-behavior:contain}
-.editor.dragover{outline:2px dashed var(--accent);outline-offset:-10px;background:var(--accent-soft)}
+/* ---------- editor TL & terjemahan ---------- */
+.editor,.trans{display:none;flex:1;min-height:0;overflow-y:auto;padding:14px 16px;background:var(--bg);flex-direction:column;gap:12px;overscroll-behavior:contain}
+.editor.dragover,.trans.dragover{outline:2px dashed var(--accent);outline-offset:-10px;background:var(--accent-soft)}
 .app[data-mode="editor"] .editor{display:flex}
+.app[data-mode="trans"] .trans{display:flex}
 .app[data-mode="editor"] .chat,.app[data-mode="editor"] .composer{display:none}
+.app[data-mode="trans"] .chat,.app[data-mode="trans"] .composer{display:none}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px;flex-shrink:0}
 .card h2{font-size:13.5px;font-weight:650;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .badge{font-size:11px;font-weight:600;background:var(--surface-2);color:var(--ink-2);border-radius:999px;padding:1px 9px}
@@ -300,8 +302,28 @@ button:focus:not(:focus-visible){outline:none}
 .empty-note{font-size:13px;color:var(--ink-3)}
 @media(max-width:560px){
   .tabbar{padding:6px 10px}
-  .editor{padding:10px}
+  .editor,.trans{padding:10px}
 }
+
+/* ---------- glosarium ---------- */
+.gl-list{max-height:320px;overflow-y:auto}
+.gl-row{display:flex;align-items:flex-start;gap:8px;padding:8px 2px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.5;flex-wrap:wrap}
+.gl-row:first-child{border-top:none}
+.gl-term{font-family:var(--mono);font-weight:650;font-size:12px;word-break:break-word}
+.gl-kind{font-size:10px;font-weight:700;letter-spacing:.4px;padding:1px 7px;border-radius:999px;background:var(--surface-2);color:var(--ink-2);text-transform:uppercase;flex-shrink:0}
+.gl-arrow{color:var(--ink-3);flex-shrink:0}
+.gl-note{width:100%;color:var(--ink-3);font-size:11.5px}
+.gl-main{display:flex;align-items:center;gap:8px;flex:1;min-width:0;flex-wrap:wrap}
+.gl-form{display:flex;gap:8px;flex-wrap:wrap}
+.gl-form .gl-input{flex:1 1 130px;min-width:0}
+.gl-input{height:30px;padding:0 10px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink);font-size:12.5px;font-family:var(--mono)}
+.gl-input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.gl-check{width:15px;height:15px;margin-top:3px;flex-shrink:0;accent-color:var(--accent)}
+.btn.xs{height:24px;padding:0 9px;font-size:11.5px;border-radius:8px}
+.p-loadrow{display:flex;gap:8px;align-items:stretch}
+.p-loadrow .p-loadinput{flex:1;min-width:0}
+.p-loadrow input{width:100%;height:40px;padding:0 10px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--ink);font-size:13px}
+.p-loadrow input:focus{outline:2px solid var(--accent);outline-offset:1px}
 </style>
 </head>
 <body>
@@ -323,6 +345,7 @@ button:focus:not(:focus-visible){outline:none}
           <option value="gemini">Gemini</option>
           <option value="agnes">Agnes AI</option>
           <option value="cloudflare">Cloudflare AI</option>
+          <option value="sumopod">Sumopod</option>
           <option value="custom">Custom (OpenAI)</option>
         </select>
       </div>
@@ -339,6 +362,7 @@ button:focus:not(:focus-visible){outline:none}
   <nav class="tabbar" role="tablist" aria-label="Mode">
     <button class="tab" role="tab" id="tabOcr" aria-selected="true" type="button">OCR</button>
     <button class="tab" role="tab" id="tabEdit" aria-selected="false" type="button">Editor TL</button>
+    <button class="tab" role="tab" id="tabTrans" aria-selected="false" type="button">Terjemahan</button>
   </nav>
 
   <main class="chat" id="chat" aria-live="polite">
@@ -385,6 +409,71 @@ button:focus:not(:focus-visible){outline:none}
     </div>
   </section>
 
+  <section class="trans" id="transView" aria-label="Terjemahan">
+    <div class="card">
+      <h2>Sumber (.txt) <span class="badge" id="trStats">0 baris</span></h2>
+      <textarea class="ed-input" id="trInput" spellcheck="false" wrap="off" aria-label="Teks sumber untuk diterjemahkan"
+        placeholder="Tempel teks sumbermu di sini (paling bagus hasil OCR), seret file .txt ke jendela, atau pilih file…"></textarea>
+      <div class="action-row">
+        <button class="btn" id="trPick" type="button">Pilih file .txt</button>
+        <input type="file" id="trFile" accept=".txt,text/plain" hidden />
+        <button class="btn primary" id="trRun" type="button">Terjemahkan</button>
+        <button class="btn hidden" id="trRestart" type="button">Mulai ulang</button>
+      </div>
+      <div class="progress" id="trProgress" aria-hidden="true"><i id="trBar"></i></div>
+      <div class="ed-status" id="trStatus" role="status"></div>
+    </div>
+
+    <div id="trResults" hidden>
+      <div class="card" style="margin-bottom:12px">
+        <h2>Hasil <span class="badge" id="trOutBadge"></span></h2>
+        <div class="ocr-result" id="trOut"></div>
+        <div class="action-row">
+          <button class="btn" id="trCopy" type="button"></button>
+          <button class="btn primary" id="trDl" type="button"></button>
+          <button class="btn" id="trRep" type="button"></button>
+        </div>
+        <div class="meta-row" id="trMeta"></div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <h2>Glosarium baru <span class="badge" id="trColBadge">0</span></h2>
+        <div class="list-scroll" id="trSuggestions"></div>
+        <div class="action-row"><button class="btn" id="trSaveSuggest" type="button">Simpan ke Glosarium</button></div>
+      </div>
+      <div class="card">
+        <h2>Perlu dicek ⚠️ <span class="badge warn" id="trRevBadge">0</span></h2>
+        <div class="list-scroll" id="trReview"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Glosarium <span class="badge" id="glBadge">…</span></h2>
+      <input class="gl-input" id="glSearch" type="search" placeholder="Cari istilah…" aria-label="Cari istilah glosarium" style="width:100%;margin-bottom:8px" />
+      <div class="gl-form" style="margin-bottom:8px">
+        <input class="gl-input" id="glNewTerm" type="text" spellcheck="false" placeholder="istilah (EN)" aria-label="Istilah baru" />
+        <input class="gl-input" id="glNewTo" type="text" spellcheck="false" placeholder="terjemahan (ID)" aria-label="Terjemahan istilah baru" />
+        <select class="gl-input" id="glNewKind" aria-label="Jenis istilah">
+          <option value="other">other</option>
+          <option value="place">place</option>
+          <option value="title">title</option>
+          <option value="item">item</option>
+          <option value="skill">skill</option>
+          <option value="name">name</option>
+        </select>
+        <button class="btn primary xs" id="glAddBtn" type="button">Tambah</button>
+      </div>
+      <div class="gl-list" id="glList" aria-live="polite"></div>
+      <div class="action-row">
+        <button class="btn" id="glImportBtn" type="button">Impor JSON/CSV</button>
+        <input type="file" id="glFile" accept=".json,.csv,text/plain,application/json,text/csv" hidden />
+        <button class="btn" id="glExportJson" type="button">Ekspor JSON</button>
+        <button class="btn" id="glExportCsv" type="button">Ekspor CSV</button>
+        <button class="btn" id="glReload" type="button">Muat ulang</button>
+        <button class="btn danger" id="glClear" type="button">Kosongkan</button>
+      </div>
+    </div>
+  </section>
+
   <footer class="composer">
     <div class="composer-row">
       <button class="attach-btn" id="uploadBtn" type="button" aria-label="Pilih gambar" title="Pilih gambar">
@@ -424,6 +513,7 @@ button:focus:not(:focus-visible){outline:none}
       <button class="p-tab" id="pt-gemini" data-p="gemini" role="tab" aria-controls="pane-gemini" aria-selected="true" type="button">Gemini</button>
       <button class="p-tab" id="pt-agnes" data-p="agnes" role="tab" aria-controls="pane-agnes" aria-selected="false" type="button">Agnes</button>
       <button class="p-tab" id="pt-cloudflare" data-p="cloudflare" role="tab" aria-controls="pane-cloudflare" aria-selected="false" type="button">Cloudflare</button>
+      <button class="p-tab" id="pt-sumopod" data-p="sumopod" role="tab" aria-controls="pane-sumopod" aria-selected="false" type="button">Sumopod</button>
       <button class="p-tab" id="pt-custom" data-p="custom" role="tab" aria-controls="pane-custom" aria-selected="false" type="button">Custom</button>
     </div>
 
@@ -478,6 +568,32 @@ button:focus:not(:focus-visible){outline:none}
         </div>
       </div>
 
+      <div class="p-pane" id="pane-sumopod" data-pane="sumopod" role="tabpanel" aria-labelledby="pt-sumopod">
+        <div class="field">
+          <label for="setSumopodUrl">Base URL</label>
+          <input type="url" id="setSumopodUrl" inputmode="url" spellcheck="false" placeholder="https://ai.sumopod.com/v1" />
+        </div>
+        <div class="field">
+          <label for="setSumopodModel">Model</label>
+          <div class="p-loadrow">
+            <div class="p-loadinput"><input type="text" id="setSumopodModel" list="dlSumopod" spellcheck="false" placeholder="klik “Muat model” lalu pilih" /></div>
+            <button class="btn" id="loadSumopodModels" type="button">Muat model</button>
+          </div>
+          <datalist id="dlSumopod"></datalist>
+        </div>
+        <div class="field">
+          <div class="p-keyrow"><label for="setSumopodKey">API key</label><span class="p-pill">Wajib</span></div>
+          <div class="p-input">
+            <input type="password" id="setSumopodKey" autocomplete="off" spellcheck="false" placeholder="key Sumopod… — beberapa key: k1,k2,k3" />
+            <button class="p-eye" type="button" data-toggle="setSumopodKey" aria-label="Tampilkan / sembunyikan API key"><span class="p-ico">visibility</span></button>
+          </div>
+        </div>
+        <div class="p-tip">
+          <span class="p-ico">chat</span>
+          <p>Endpoint OpenAI Sumopod (<code>https://ai.sumopod.com/v1</code>), dukung multi-key. Klaim resmi Sumopod: <span class="p-strong">teks saja</span> — Editor TL &amp; Terjemahan aman. OCR via model vision tetap bisa dicoba; bila model menolak gambar, muncul pesan jelas.</p>
+        </div>
+      </div>
+
       <div class="p-pane" id="pane-custom" data-pane="custom" role="tabpanel" aria-labelledby="pt-custom">
         <div class="field">
           <label for="setCustomUrl">Base URL</label>
@@ -485,7 +601,11 @@ button:focus:not(:focus-visible){outline:none}
         </div>
         <div class="field">
           <label for="setCustomModel">Model</label>
-          <input type="text" id="setCustomModel" spellcheck="false" placeholder="misal: gpt-4o, claude-3-5-sonnet, deepseek-chat" />
+          <div class="p-loadrow">
+            <div class="p-loadinput"><input type="text" id="setCustomModel" list="dlCustom" spellcheck="false" placeholder="misal: gpt-4o, claude-3-5-sonnet, deepseek-chat" /></div>
+            <button class="btn" id="loadCustomModels" type="button">Muat model</button>
+          </div>
+          <datalist id="dlCustom"></datalist>
         </div>
         <div class="field">
           <div class="p-keyrow"><label for="setCustomKey">API key</label><span class="p-pill">Opsional</span></div>
@@ -555,9 +675,10 @@ const PROVIDERS = {
     {id:'@cf/mistralai/mistral-small-3.1-24b-instruct', desc:'Mistral Small 3.1 24B vision'},
   ], def:'@cf/qwen/qwen3.8-27b'},
   custom: { label:'Custom (OpenAI-compatible)', models:[], def:'' },
+  sumopod: { label:'Sumopod', models:[], def:'' },
 };
 const DEFAULTS = { provider:'gemini', geminiModel:'gemini-3.5-flash-lite', agnesModel:'agnes-3.0-flash', cfModel:'@cf/qwen/qwen3.8-27b',
-  customUrl:'', customModel:'', customKey:'', geminiKey:'', agnesKey:'' };
+  customUrl:'', customModel:'', customKey:'', geminiKey:'', agnesKey:'', sumopodUrl:'', sumopodModel:'', sumopodKey:'' };
 const LS_KEY='ocr_settings_v2', HIST_KEY='ocr_history_v1', HIST_MAX=20;
 const MAX_TEXT_STORE=12000;
 
@@ -590,6 +711,7 @@ function loadSettings(){try{return{...DEFAULTS,...JSON.parse(localStorage.getIte
 function saveSettings(){try{localStorage.setItem(LS_KEY,JSON.stringify(settings));}catch{}}
 function activeModel(){
   if(provider==='custom')return (settings.customModel||'').trim()||'custom — isi base URL & model';
+  if(provider==='sumopod')return (settings.sumopodModel||'').trim()||'sumopod — pilih model';
   const map={gemini:'geminiModel',agnes:'agnesModel',cloudflare:'cfModel'};
   const p=PROVIDERS[provider];
   const v=settings[map[provider]];
@@ -597,17 +719,25 @@ function activeModel(){
 }
 /* model yang ditampilkan (caption/meta) vs yang dikirim ke request body */
 function displayName(p){
-  if(p!=='custom')return activeModel();
-  return (settings.customModel||'').trim()||'custom — isi base URL & model';
+  if(p==='custom')return (settings.customModel||'').trim()||'custom — isi base URL & model';
+  if(p==='sumopod')return (settings.sumopodModel||'').trim()||'sumopod — pilih model';
+  return activeModel();
 }
 function requestModel(p){
-  if(p!=='custom')return activeModel();
-  return (settings.customModel||'').replace(/[\r\n]+/g,'').trim().slice(0,120);
+  if(p==='custom')return (settings.customModel||'').replace(/[\r\n]+/g,'').trim().slice(0,120);
+  if(p==='sumopod')return (settings.sumopodModel||'').replace(/[\r\n]+/g,'').trim().slice(0,120);
+  return activeModel();
 }
 /* BYOK: key milik pengguna dikirim opsional; disimpan hanya di browser ini */
 function authBody(p){
   if(p==='gemini')return settings.geminiKey?{apiKey:settings.geminiKey}:null;
   if(p==='agnes')return settings.agnesKey?{apiKey:settings.agnesKey}:null;
+  if(p==='sumopod'){
+    const o={};
+    if((settings.sumopodKey||'').trim())o.apiKey=settings.sumopodKey.trim();
+    if((settings.sumopodUrl||'').trim())o.baseUrl=settings.sumopodUrl.trim();
+    return o;
+  }
   if(p==='custom'){
     const o={};
     if((settings.customKey||'').trim())o.apiKey=settings.customKey.trim();
@@ -693,6 +823,9 @@ function openSettings(){
   fillSelect($('setCf'),PROVIDERS.cloudflare.models,settings.cfModel);
   $('setGeminiKey').value=settings.geminiKey||'';
   $('setAgnesKey').value=settings.agnesKey||'';
+  $('setSumopodUrl').value=settings.sumopodUrl||'';
+  $('setSumopodModel').value=settings.sumopodModel||'';
+  $('setSumopodKey').value=settings.sumopodKey||'';
   $('setCustomUrl').value=settings.customUrl||'';
   $('setCustomModel').value=settings.customModel||'';
   $('setCustomKey').value=settings.customKey||'';
@@ -727,6 +860,7 @@ $('testKeyBtn').onclick=async()=>{
   if(provider==='gemini')payload.apiKey=settings.geminiKey||undefined;
   if(provider==='agnes')payload.apiKey=settings.agnesKey||undefined;
   if(provider==='custom'){payload.apiKey=settings.customKey||undefined;payload.baseUrl=settings.customUrl||undefined;}
+  if(provider==='sumopod'){payload.apiKey=settings.sumopodKey||undefined;payload.baseUrl=settings.sumopodUrl||undefined;}
   try{
     const resp=await fetch(base+'/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const data=await resp.json().catch(()=>({}));
@@ -747,6 +881,9 @@ $('testKeyBtn').onclick=async()=>{
 function doSaveSettings(){
   settings.geminiModel=$('setGemini').value;settings.agnesModel=$('setAgnes').value;settings.cfModel=$('setCf').value;
   settings.geminiKey=$('setGeminiKey').value.trim();settings.agnesKey=$('setAgnesKey').value.trim();
+  settings.sumopodKey=$('setSumopodKey').value.trim();
+  settings.sumopodModel=($('setSumopodModel').value||'').replace(/[\r\n]+/g,' ').trim().slice(0,120);
+  settings.sumopodUrl=($('setSumopodUrl').value||'').trim().slice(0,250);
   settings.customKey=$('setCustomKey').value.trim();
   settings.customModel=($('setCustomModel').value||'').replace(/[\r\n]+/g,' ').trim().slice(0,120);
   settings.customUrl=($('setCustomUrl').value||'').trim().slice(0,250);
@@ -761,6 +898,27 @@ $('settingsSave').onclick=()=>{
 $('settingsReset').onclick=()=>{
   const p=settings.provider;settings={...DEFAULTS,provider:p};saveSettings();refreshHome();closeOverlay(setOverlay);showToast('Model dikembalikan ke bawaan');
 };
+
+/* ---------- tombol "Muat model" (Sumopod & Custom) ---------- */
+async function loadModelList(pl,btn,datalistEl){
+  const base=CONFIG.WORKER_URL.replace(/\/+$/,'');
+  const orig=btn.textContent;
+  btn.disabled=true;btn.textContent='Memuat…';
+  try{
+    const resp=await fetch(base+'/models',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(mergeAuth({provider:pl},pl))});
+    const data=await resp.json().catch(()=>({}));
+    if(!resp.ok||!data.ok)throw new Error(data.error||('Server membalas '+resp.status));
+    datalistEl.innerHTML='';
+    (data.models||[]).forEach(m=>{const o=document.createElement('option');o.value=m.id;datalistEl.appendChild(o);});
+    showToast((data.models||[]).length+' model dimuat — klik kolom Model, kosongkan, lalu pilih dari daftar.');
+  }catch(e){
+    showToast('Muat model gagal: '+(e&&e.message||'Tidak dapat menjangkau server.'));
+  }finally{
+    btn.disabled=false;btn.textContent=orig;
+  }
+}
+$('loadSumopodModels').onclick=()=>loadModelList('sumopod',$('loadSumopodModels'),$('dlSumopod'));
+$('loadCustomModels').onclick=()=>loadModelList('custom',$('loadCustomModels'),$('dlCustom'));
 
 /* Escape menutup modal teratas */
 document.addEventListener('keydown',e=>{
@@ -885,11 +1043,11 @@ fileInput.onchange=e=>handleFiles(e.target.files);
 
 /* Drag & drop di seluruh jendela dengan penanda visual */
 let dragDepth=0;
-window.addEventListener('dragenter',e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes('Files')){dragDepth++;chat.classList.add('dragover');editorView.classList.add('dragover');}});
-window.addEventListener('dragleave',()=>{dragDepth=Math.max(0,dragDepth-1);if(!dragDepth){chat.classList.remove('dragover');editorView.classList.remove('dragover');}});
+window.addEventListener('dragenter',e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes('Files')){dragDepth++;chat.classList.add('dragover');editorView.classList.add('dragover');transView.classList.add('dragover');}});
+window.addEventListener('dragleave',()=>{dragDepth=Math.max(0,dragDepth-1);if(!dragDepth){chat.classList.remove('dragover');editorView.classList.remove('dragover');transView.classList.remove('dragover');}});
 window.addEventListener('dragover',e=>e.preventDefault());
 window.addEventListener('drop',e=>{
-  e.preventDefault();dragDepth=0;chat.classList.remove('dragover');editorView.classList.remove('dragover');
+  e.preventDefault();dragDepth=0;chat.classList.remove('dragover');editorView.classList.remove('dragover');transView.classList.remove('dragover');
   if(modalOpen)return;
   const fl=e.dataTransfer&&e.dataTransfer.files;
   if(!fl||!fl.length)return;
@@ -1168,9 +1326,11 @@ function setMode(m){
   mode=m;appEl.dataset.mode=m;
   $('tabOcr').setAttribute('aria-selected',String(m==='ocr'));
   $('tabEdit').setAttribute('aria-selected',String(m==='editor'));
+  $('tabTrans').setAttribute('aria-selected',String(m==='trans'));
 }
 $('tabOcr').onclick=()=>setMode('ocr');
 $('tabEdit').onclick=()=>setMode('editor');
+$('tabTrans').onclick=()=>setMode('trans');
 
 const edInput=$('edInput'), edFile=$('edFile'), edRun=$('edRun'), edRestart=$('edRestart'), edStatus=$('edStatus'),
   edResults=$('edResults'), edProgress=$('edProgress'), edBar=$('edBar'), editorView=$('editorView');
@@ -1406,8 +1566,442 @@ async function edClear(){
 }
 edUpdateStats();edSyncButtons();
 
+/* ===================== GLOSARIUM ===================== */
+const SYNC_BASE=CONFIG.WORKER_URL.replace(/\/+$/,'');
+const TR_KINDS=['place','title','item','skill','name','other'];
+const GL_KEY='ocr_glossary_v1';
+const glBadge=$('glBadge'), glSearch=$('glSearch'), glList=$('glList'), glFile=$('glFile');
+let gloss={entries:[],source:'lokal'};
+function glossNormal(e){
+  const term=String(e?.term??e?.from??'').trim().slice(0,120);
+  const translation=String(e?.translation??e?.to??'').trim().slice(0,300);
+  const kindRaw=String(e?.kind||'').toLowerCase();
+  const kind=TR_KINDS.includes(kindRaw)?kindRaw:'other';
+  const note=String(e?.note||'').trim().slice(0,200);
+  if(!term||!translation)return null;
+  return {term,translation,kind,note};
+}
+function glossLoadCache(){
+  try{
+    const d=JSON.parse(localStorage.getItem(GL_KEY)||'{}');
+    if(Array.isArray(d?.entries))return {entries:d.entries.map(glossNormal).filter(Boolean),source:'lokal'};
+  }catch{}
+  return {entries:[],source:'lokal'};
+}
+function glossSaveCache(){
+  try{localStorage.setItem(GL_KEY,JSON.stringify({entries:gloss.entries}));}
+  catch{showToast('Penyimpanan browser penuh — glosarium gagal disimpan lokal');}
+}
+function glossMerge(entries){
+  const map=new Map(gloss.entries.map(e=>[e.term.toLowerCase(),e]));
+  for(const e of entries){
+    const n=glossNormal(e);if(!n)continue;
+    map.set(n.term.toLowerCase(),n);
+  }
+  gloss.entries=[...map.values()].sort((a,b)=>a.term.localeCompare(b.term));
+}
+function glRender(){
+  const n=gloss.entries.length;
+  glBadge.textContent=(gloss.source==='supabase'?'Supabase':'Lokal')+' · '+n;
+  glBadge.className='badge'+(gloss.source==='supabase'?'':' warn');
+  const q=(glSearch.value||'').trim().toLowerCase();
+  glList.textContent='';
+  const list=gloss.entries.filter(e=>!q||e.term.toLowerCase().includes(q)||e.translation.toLowerCase().includes(q)||e.kind.includes(q));
+  if(!list.length){
+    glList.appendChild(el('div','empty-note',n?'Tidak ada yang cocok dengan pencarian.':'Glosarium masih kosong. Isi kolom di atas, atau klik "Simpan ke Glosarium" setelah menerjemahkan.'));
+    return;
+  }
+  for(const g of list){
+    const row=el('div','gl-row');
+    const main=el('span','gl-main');
+    main.append(el('span','gl-term',g.term),el('span','gl-arrow','→'),el('span','gl-term',g.translation),el('span','gl-kind',g.kind));
+    if(g.note)main.append(el('span','gl-note',g.note));
+    const del=el('button','btn xs');del.type='button';del.textContent='Hapus';del.dataset.term=g.term;
+    row.append(main,del);
+    glList.appendChild(row);
+  }
+}
+async function glossPull(){
+  try{
+    const resp=await fetch(SYNC_BASE+'/glossary');
+    const data=await resp.json().catch(()=>null);
+    if(data&&data.ok&&data.source==='supabase'&&Array.isArray(data.entries)){
+      gloss={entries:data.entries.map(glossNormal).filter(Boolean),source:'supabase'};
+      glossSaveCache();glRender();
+      showToast('Glosarium Supabase dimuat: '+gloss.entries.length+' entri');
+      return;
+    }
+  }catch{}
+  const cached=glossLoadCache();
+  if(gloss.entries.length!==cached.entries.length)showToast('Glosarium: mode lokal (browser)');
+  gloss=cached;glRender();
+}
+async function glossAddMany(entries){
+  const list=entries.map(glossNormal).filter(Boolean);
+  if(!list.length)return false;
+  if(gloss.source==='supabase'){
+    try{
+      for(let i=0;i<list.length;i+=500){
+        const chunk=list.slice(i,i+500);
+        const resp=await fetch(SYNC_BASE+'/glossary',{method:'POST',
+          headers:{'Content-Type':'application/json'},body:JSON.stringify({entries:chunk,mode:'merge'})});
+        const data=await resp.json().catch(()=>({}));
+        if(!resp.ok||data.error){
+          if(/belum dikonfigurasi/i.test(String(data.error||''))){
+            const cached=glossLoadCache();gloss={entries:cached.entries,source:'lokal'};glossSaveCache();glRender();
+          }
+          showToast('Simpan ke Supabase gagal: '+(data.error||('Server membalas '+resp.status)));
+          return false;
+        }
+      }
+      await glossPull();
+      showToast(list.length+' istilah tersimpan ke Supabase');
+      return true;
+    }catch{showToast('Simpan ke Supabase gagal: Tidak dapat menjangkau server.');return false;}
+  }
+  glossMerge(list);glossSaveCache();glRender();
+  showToast(list.length+' istilah tersimpan (lokal)');
+  return true;
+}
+glSearch.addEventListener('input',glRender);
+glList.addEventListener('click',async e=>{
+  const b=e.target.closest('button[data-term]');if(!b)return;
+  const term=b.dataset.term;
+  if(gloss.source==='supabase'){
+    try{
+      const resp=await fetch(SYNC_BASE+'/glossary',{method:'DELETE',
+        headers:{'Content-Type':'application/json'},body:JSON.stringify({term})});
+      const data=await resp.json().catch(()=>({}));
+      if(!resp.ok||data.error){showToast('Hapus gagal: '+(data.error||('Server membalas '+resp.status)));return;}
+      await glossPull();
+      return;
+    }catch{showToast('Hapus gagal: Tidak dapat menjangkau server.');return;}
+  }
+  gloss.entries=gloss.entries.filter(x=>x.term.toLowerCase()!==term.toLowerCase());
+  glossSaveCache();glRender();showToast('Entri dihapus');
+});
+$('glAddBtn').onclick=()=>{
+  const term=$('glNewTerm').value,translation=$('glNewTo').value,kind=$('glNewKind').value;
+  if(!term.trim()||!translation.trim()){showAlert('Isi istilah dan terjemahannya dulu.','Glosarium');return;}
+  glossAddMany([{term,translation,kind,note:''}]);
+  $('glNewTerm').value='';$('glNewTo').value='';
+};
+function glDownload(name,text,mime){
+  try{
+    const blob=new Blob([text],{type:mime+';charset=utf-8'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    showToast('Diunduh: '+name);
+  }catch{showToast('Gagal mengunduh file');}
+}
+$('glExportJson').onclick=()=>glDownload('glossary.json',JSON.stringify({entries:gloss.entries},null,2),'application/json');
+$('glExportCsv').onclick=()=>{
+  const rows=[['term','translation','kind','note']];
+  gloss.entries.forEach(g=>rows.push([g.term,g.translation,g.kind,g.note]));
+  glDownload('glossary.csv',rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n'),'text/csv');
+};
+$('glReload').onclick=()=>glossPull();
+function csvSplit(s){
+  const rows=[];let row=[],cur='',inQ=false;
+  for(let i=0;i<s.length;i++){
+    const ch=s[i];
+    if(inQ){
+      if(ch==='"'){if(s[i+1]==='"'){cur+='"';i++;}else inQ=false;}
+      else cur+=ch;
+    }else if(ch==='"')inQ=true;
+    else if(ch===','){row.push(cur);cur='';}
+    else if(ch==='\n'||ch==='\r'){
+      if(ch==='\r'&&s[i+1]==='\n')i++;
+      row.push(cur);rows.push(row);row=[];cur='';
+    }else cur+=ch;
+  }
+  if(cur!==''||row.length){row.push(cur);rows.push(row);}
+  return rows.filter(r=>r.some(c=>String(c).trim()!==''));
+}
+function parseGlossText(text){
+  const s=String(text||'').replace(/^\uFEFF/,'').trim();
+  if(!s)throw new Error('File kosong.');
+  if(s[0]==='{'||s[0]==='['){
+    const j=JSON.parse(s);
+    const arr=Array.isArray(j)?j:(Array.isArray(j?.entries)?j.entries:Array.isArray(j?.glossary)?j.glossary:null);
+    if(!arr)throw new Error('JSON harus berupa array entri atau {entries:[...]}.');
+    return arr;
+  }
+  const rows=csvSplit(s);
+  if(!rows.length)throw new Error('CSV tidak berisi baris data.');
+  const head=(rows[0]||[]).map(h=>String(h).toLowerCase().trim());
+  const hasHeader=head.some(h=>['term','from','istilah'].includes(h));
+  const idx=hasHeader?{term:-1,to:-1,kind:-1,note:-1}:{term:0,to:1,kind:2,note:3};
+  if(hasHeader){
+    head.forEach((h,i)=>{
+      if(['term','from','istilah'].includes(h))idx.term=i;
+      else if(['translation','to','terjemahan'].includes(h))idx.to=i;
+      else if(['kind','jenis'].includes(h))idx.kind=i;
+      else if(['note','keterangan'].includes(h))idx.note=i;
+    });
+    if(idx.term<0||idx.to<0)throw new Error('CSV kepala tidak memuat kolom term/from dan translation/to.');
+  }
+  const out=[];
+  for(let i=hasHeader?1:0;i<rows.length;i++){
+    const c=rows[i];
+    out.push({term:c[idx.term]??'',translation:c[idx.to]??'',kind:c[idx.kind]??'other',note:c[idx.note]??''});
+  }
+  return out;
+}
+$('glImportBtn').onclick=()=>glFile.click();
+glFile.onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';
+  if(!f)return;
+  try{
+    const entries=(parseGlossText(await f.text())).map(glossNormal).filter(Boolean);
+    if(!entries.length)throw new Error('Tidak ada entri valid di file.');
+    const over=entries.length>500;
+    const ok=await glossAddMany(entries);
+    if(ok)showToast(over?('Impor: 500 dari '+entries.length+' entri tersimpan (sisa dipecah lagi bila perlu)'):(entries.length+' entri diimpor'));
+  }catch(err){showAlert('Impor gagal: '+(err&&err.message||'File tidak dikenali.'),'Impor glosarium');}
+};
+$('glClear').onclick=async()=>{
+  const n=gloss.entries.length;
+  if(!n){showToast('Glosarium sudah kosong');return;}
+  const ok=await showConfirm(n+' entri glosarium '+(gloss.source==='supabase'?'di Supabase':'di browser ini')+' akan dihapus permanen.','Kosongkan glosarium?','Kosongkan');
+  if(!ok)return;
+  if(gloss.source==='supabase'){
+    try{
+      const resp=await fetch(SYNC_BASE+'/glossary',{method:'DELETE',
+        headers:{'Content-Type':'application/json'},body:JSON.stringify({all:true})});
+      const data=await resp.json().catch(()=>({}));
+      if(!resp.ok||data.error){showToast('Kosongkan gagal: '+(data.error||('Server membalas '+resp.status)));return;}
+      gloss={entries:[],source:'supabase'};glossSaveCache();glRender();showToast('Glosarium Supabase dikosongkan');
+      return;
+    }catch{showToast('Kosongkan gagal: Tidak dapat menjangkau server.');return;}
+  }
+  gloss.entries=[];glossSaveCache();glRender();showToast('Glosarium dikosongkan');
+};
+
+/* ===================== TERJEMAHAN ===================== */
+const trInput=$('trInput'), trFile=$('trFile'), trRun=$('trRun'), trRestart=$('trRestart'), trStatus=$('trStatus'),
+  trResults=$('trResults'), trProgress=$('trProgress'), trBar=$('trBar'), transView=$('transView');
+let tr=trFresh();
+let trEol='\n';
+function trFresh(){return{running:false,stop:false,providers:new Set(),chunks:[],next:0,ctrl:null,orig:[],out:[],pageAt:[],fileName:'terjemahan.txt',eol:'\n',collect:[],review:[],p:'',mid:''};}
+function trUpdateStats(){
+  const {lines}=edSplit(trInput.value);
+  const total=trInput.value?lines.length:0;
+  const pages=lines.filter(l=>PAGE_RE.test(l)).length;
+  $('trStats').textContent=total+' baris'+(pages?' · '+pages+' halaman':'');
+}
+function trSetStatus(msg,cls){trStatus.textContent=msg||'';trStatus.className='ed-status'+(cls?' '+cls:'');}
+function trSetProgress(done,total){
+  if(!total){trProgress.classList.remove('on');trBar.style.width='0';return;}
+  trProgress.classList.add('on');trBar.style.width=Math.round(done/total*100)+'%';
+}
+function trSyncButtons(){
+  const paused=!tr.running&&tr.chunks.length&&tr.next<tr.chunks.length;
+  trRun.className='btn '+(tr.running?'danger':'primary');
+  trRun.textContent=tr.running?'Hentikan':paused?'Lanjutkan':'Terjemahkan';
+  trRestart.classList.toggle('hidden',!paused);
+  $('trPick').disabled=tr.running;
+}
+function trResetAll(keepText){
+  if(tr.running){tr.stop=true;try{tr.ctrl&&tr.ctrl.abort();}catch{}}
+  const name=tr.fileName;tr=trFresh();if(keepText)tr.fileName=name;
+  trResults.hidden=true;trSetProgress(0,0);trSetStatus('');trSyncButtons();
+}
+trInput.addEventListener('input',()=>{trUpdateStats();if(!tr.running&&(tr.chunks.length||!trResults.hidden))trResetAll(true);});
+async function trLoadFile(file){
+  if(!file)return;
+  if(file.size>ED_FILE_MAX){await showAlert('File terlalu besar (maks 2 MB). Pecah per chapter dulu.','File terlalu besar');return;}
+  if(tr.running){showToast('Tunggu proses selesai dulu');return;}
+  try{
+    const text=await file.text();
+    trResetAll(false);trInput.value=text.replace(/^\uFEFF/,'');tr.fileName=file.name||'terjemahan.txt';trEol=text.includes('\r\n')?'\r\n':'\n';
+    trUpdateStats();setMode('trans');showToast('File dimuat: '+tr.fileName);
+  }catch{showToast('Gagal membaca file');}
+}
+$('trPick').onclick=()=>trFile.click();
+trFile.onchange=e=>{trLoadFile(e.target.files[0]);trFile.value='';};
+async function trCall(lines,context){
+  const ctrl=new AbortController();tr.ctrl=ctrl;
+  const timer=setTimeout(()=>ctrl.abort(),120000);
+  try{
+    const resp=await fetch(SYNC_BASE+'/translate',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(mergeAuth({lines,context,glossary:gloss.entries,provider:tr.p,modelId:requestModel(tr.p)},tr.p)),signal:ctrl.signal});
+    let data={};
+    try{data=await resp.json();}catch{throw new Error('Respons server bukan JSON. Periksa Service Binding OCR_WORKER di pengaturan Pages.');}
+    if(!resp.ok)throw new Error(data.error||('Server membalas '+resp.status));
+    return data;
+  }finally{clearTimeout(timer);}
+}
+function trAddCollect(g){
+  const from=String(g?.from||'').trim(),to=String(g?.to||'').trim();
+  if(!from||!to||from.toLowerCase()===to.toLowerCase())return;
+  if(tr.collect.some(x=>x.from.toLowerCase()===from.toLowerCase()))return;
+  tr.collect.push({from,to,kind:TR_KINDS.includes(g?.kind)?g.kind:'other',note:String(g?.note||'').trim()});
+}
+function trChunkLabel(ch){
+  const pg=[];
+  for(let i=ch.a;i<ch.b;i++)if(PAGE_RE.test(tr.orig[i]))pg.push(tr.orig[i].trim());
+  return pg.length?('mulai '+pg[0]):('baris '+(ch.a+1)+'–'+ch.b);
+}
+async function trProcess(from){
+  tr.running=true;tr.stop=false;
+  tr.p=provider;tr.mid=displayName(provider);tr.providers.add(PROVIDERS[tr.p].label+' · '+tr.mid);
+  trSyncButtons();
+  let err=null;
+  for(let k=from;k<tr.chunks.length;k++){
+    if(tr.stop)break;
+    const ch=tr.chunks[k];
+    trSetStatus('Menerjemahkan bagian '+(k+1)+' dari '+tr.chunks.length+' ('+trChunkLabel(ch)+')…');
+    trSetProgress(k,tr.chunks.length);
+    const lines=[];
+    for(let i=ch.a;i<ch.b;i++){
+      const t=tr.orig[i];
+      if(!t.trim())continue;
+      if(t.length>ED_LINE_MAX){
+        if(!tr.review.some(r=>r.n===i+1))tr.review.push({n:i+1,text:t,issue:'Baris terlalu panjang (>'+ED_LINE_MAX+' karakter), tidak diterjemahkan otomatis.',suggestion:'Terjemahkan manual.'});
+        continue;
+      }
+      lines.push({n:i+1,t});
+    }
+    if(lines.length){
+      const context=[];
+      for(let i=ch.a-1;i>=0&&context.length<ED_CTX;i--)if(tr.out[i].trim())context.unshift(tr.out[i]);
+      let data=null;
+      for(let attempt=0;attempt<2&&!data;attempt++){
+        try{data=await trCall(lines,context);}
+        catch(e){
+          if(tr.stop||(e&&e.name==='AbortError')){err=tr.stop?null:new Error('Waktu habis.');break;}
+          if(attempt===1)err=e;
+        }
+      }
+      if(!data)break;
+      for(const l of data.lines||[]){
+        const i=l.n-1;
+        if(i>=0&&i<tr.orig.length&&typeof l.t==='string')tr.out[i]=l.t;
+      }
+      for(const g of data.glossary||[])trAddCollect(g);
+      for(const r of data.review||[])tr.review.push(r);
+    }
+    tr.next=k+1;
+  }
+  tr.running=false;tr.ctrl=null;
+  trSetProgress(0,0);trSyncButtons();
+  trRender();
+  const done=tr.next>=tr.chunks.length;
+  if(done)trSetStatus('Selesai: '+tr.orig.length+' baris · '+tr.collect.length+' istilah baru · '+tr.review.length+' perlu dicek.','ok');
+  else if(err)trSetStatus('Berhenti di bagian '+(tr.next+1)+' dari '+tr.chunks.length+': '+(err.message||'terjadi kesalahan')+' Hasil di bawah baru sampai bagian '+tr.next+'. Klik Lanjutkan untuk meneruskan.','error');
+  else trSetStatus('Dihentikan di bagian '+tr.next+' dari '+tr.chunks.length+'. Klik Lanjutkan untuk meneruskan.');
+}
+function trStart(){
+  const raw=trInput.value;
+  if(!raw.trim()){showAlert('Tempel teks sumber atau pilih file .txt dulu.','Belum ada teks');return;}
+  const {lines}=edSplit(raw);
+  const name=tr.fileName;
+  tr=trFresh();tr.fileName=name;tr.eol=trEol;tr.orig=lines;tr.out=lines.slice();
+  let pg='';tr.pageAt=lines.map(l=>{if(PAGE_RE.test(l))pg=l.trim();return pg;});
+  tr.chunks=edMakeChunks(lines).filter(ch=>{for(let i=ch.a;i<ch.b;i++)if(lines[i].trim())return true;return false;});
+  if(!tr.chunks.length){trSetStatus('Tidak ada teks untuk diterjemahkan.','error');return;}
+  trResults.hidden=true;
+  trProcess(0);
+}
+trRun.onclick=()=>{
+  if(tr.running){tr.stop=true;try{tr.ctrl&&tr.ctrl.abort();}catch{}return;}
+  const paused=tr.chunks.length&&tr.next<tr.chunks.length;
+  if(paused)trProcess(tr.next);else trStart();
+};
+trRestart.onclick=()=>{trResetAll(true);trStart();};
+async function trClear(){
+  if(!trInput.value&&trResults.hidden){showToast('Terjemahan sudah kosong');return;}
+  if(tr.running){showToast('Tunggu proses selesai dulu');return;}
+  const ok=await showConfirm('Teks sumber dan hasil terjemahan akan dihapus dari layar.','Bersihkan terjemahan?','Bersihkan');
+  if(!ok)return;
+  trResetAll(false);trInput.value='';trEol='\n';trUpdateStats();showToast('Terjemahan dibersihkan');
+}
+function trLoc(n){const p=tr.pageAt[n-1];return '['+(p?p+', ':'')+'Baris '+n+']';}
+function trStructureOk(){
+  if(tr.out.length!==tr.orig.length)return false;
+  for(let i=0;i<tr.orig.length;i++){
+    const o=tr.orig[i];
+    if(!o.trim()&&tr.out[i]!==o)return false;
+    if(PAGE_RE.test(o)&&tr.out[i]!==o)return false;
+  }
+  return true;
+}
+function trReport(){
+  const parts=[];
+  parts.push('HASIL TERJEMAHAN\n');
+  parts.push(tr.out.join(tr.eol)+'\n');
+  parts.push('\nISTILAH BARU\n');
+  if(!tr.collect.length)parts.push('Tidak ada.');
+  tr.collect.forEach(g=>parts.push('- '+g.from+' → '+g.to+' ('+g.kind+')'+(g.note?' — '+g.note:'')+'\n'));
+  parts.push('\nPERLU DICEK ⚠️\n');
+  if(!tr.review.length)parts.push('Tidak ada.');
+  tr.review.slice().sort((a,b)=>a.n-b.n).forEach(r=>parts.push(trLoc(r.n)+'\n\nTeks:\n"'+r.text+'"\n\nMasalah:\n'+r.issue+'\n\nSaran:\n'+r.suggestion+'\n'));
+  return parts.join('\n');
+}
+function trSaveSuggest(){
+  const sl=$('trSuggestions');
+  sl.textContent='';
+  if(!tr.collect.length){sl.appendChild(el('div','empty-note',trResults.hidden?'Baru muncul setelah menerjemahkan.':'Tidak ada istilah baru dari bagian ini.'));return;}
+  tr.collect.forEach((g,gi)=>{
+    const row=el('div','gl-row');
+    const c=el('input','gl-check');c.type='checkbox';c.checked=true;c.dataset.gi=String(gi);
+    const main=el('span','gl-main');
+    main.append(el('span','gl-term',g.from),el('span','gl-arrow','→'));
+    const edit=el('input','gl-input');edit.type='text';edit.value=g.to;edit.dataset.gi=String(gi);edit.style.width='150px';edit.style.flex='1 1 150px';
+    edit.addEventListener('input',()=>{const i=Number(edit.dataset.gi);if(tr.collect[i])tr.collect[i].to=edit.value;});
+    main.append(edit,el('span','gl-kind',g.kind));
+    if(g.note)main.append(el('span','gl-note',g.note));
+    row.append(c,main);
+    sl.appendChild(row);
+  });
+}
+async function trRender(){
+  if(!tr.orig.length)return;
+  trResults.hidden=false;
+  const text=tr.out.join(tr.eol);
+  const out=$('trOut');out.textContent=text;out.dataset.full=text;
+  const complete=tr.next>=tr.chunks.length;
+  $('trOutBadge').textContent=complete?'lengkap':'sebagian: bagian 1–'+tr.next+' dari '+tr.chunks.length;
+  $('trOutBadge').className='badge'+(complete?'':' warn');
+  const pages=tr.orig.filter(l=>PAGE_RE.test(l)).length;
+  $('trMeta').textContent=[...tr.providers].join(' + ')+' · '+tr.orig.length+' baris'+(pages?' · '+pages+' halaman':'')+
+    (trStructureOk()?' · struktur sama dengan file asli ✓':' · ⚠ struktur berbeda dari file asli');
+  const copy=$('trCopy'),dl=$('trDl'),rep=$('trRep');
+  if(!copy.dataset.label){
+    [[copy,'Salin hasil',ICON.copy],[dl,'Unduh .txt',ICON.down],[rep,'Salin laporan',ICON.copy]].forEach(([b,l,ic])=>{b.innerHTML='<span style="display:inline-flex">'+ic+'</span><span>'+l+'</span>';b.dataset.label=l;});
+    copy.onclick=()=>copyText(out.dataset.full||'',copy);
+    dl.onclick=()=>downloadText(out.dataset.full||'',tr.fileName.replace(/\.txt$/i,'')+'-terjemahan');
+    rep.onclick=()=>copyText(trReport(),rep);
+  }
+  $('trColBadge').textContent=tr.collect.length;
+  trSaveSuggest();
+  $('trRevBadge').textContent=tr.review.length;
+  const rl=$('trReview');rl.textContent='';
+  if(!tr.review.length)rl.appendChild(el('div','empty-note','Tidak ada.'));
+  tr.review.slice().sort((a,b)=>a.n-b.n).forEach(r=>{
+    const d=el('div','diff');
+    d.append(el('div','loc',trLoc(r.n)),el('div','lbl','Teks'),el('div','tx orig',r.text),
+      el('div','why','Masalah: '+r.issue),el('div','why','Saran: '+r.suggestion));
+    rl.appendChild(d);
+  });
+}
+$('trSaveSuggest').onclick=async()=>{
+  const checked=[...$('trSuggestions').querySelectorAll('input.gl-check')].filter(c=>c.checked).map(c=>Number(c.dataset.gi));
+  if(!checked.length){showToast('Tandai istilah yang mau disimpan dulu');return;}
+  const entries=checked.map(i=>tr.collect[i]).filter(Boolean).map(g=>({term:g.from,translation:g.to,kind:g.kind,note:g.note}));
+  const ok=await glossAddMany(entries);
+  if(!ok)return;
+  checked.slice().sort((a,b)=>b-a).forEach(i=>tr.collect.splice(i,1));
+  $('trColBadge').textContent=tr.collect.length;
+  trSaveSuggest();
+};
+trUpdateStats();trSyncButtons();trSaveSuggest();
+
 refreshHome();resetFile();setBusyUI(false);
 loadHist().slice().reverse().forEach(renderRestored);
+glossPull();
 })();
 </script>
 </body>
