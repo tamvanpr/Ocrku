@@ -314,6 +314,7 @@ button:focus:not(:focus-visible){outline:none}
 
 /* ---------- glosarium ---------- */
 .gl-list{max-height:320px;overflow-y:auto}.glossary .gl-list{max-height:none;overflow:visible}
+.glossary .empty-note{margin:0 0 8px;font-size:12.5px}
 .gl-row{display:flex;align-items:flex-start;gap:8px;padding:8px 2px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.5;flex-wrap:wrap}
 .gl-row:first-child{border-top:none}
 .gl-term{font-family:var(--mono);font-weight:650;font-size:12px;word-break:break-word}
@@ -412,7 +413,7 @@ button:focus:not(:focus-visible){outline:none}
         <div class="action-row"><button class="btn" id="edCopyReport" type="button"></button></div>
       </div>
       <div class="card">
-        <h2>Perlu dicek ⚠️ <span class="badge warn" id="edRevBadge">0</span></h2>
+        <h2>Perlu dicek <span class="badge warn" id="edRevBadge">0</span></h2>
         <div class="list-scroll" id="edReview"></div>
       </div>
     </div>
@@ -450,7 +451,7 @@ button:focus:not(:focus-visible){outline:none}
         <div class="action-row"><button class="btn" id="trSaveSuggest" type="button">Simpan ke Glosarium</button></div>
       </div>
       <div class="card">
-        <h2>Perlu dicek ⚠️ <span class="badge warn" id="trRevBadge">0</span></h2>
+        <h2>Perlu dicek <span class="badge warn" id="trRevBadge">0</span></h2>
         <div class="list-scroll" id="trReview"></div>
       </div>
     </div>
@@ -459,7 +460,7 @@ button:focus:not(:focus-visible){outline:none}
   <section class="glossary" id="glView" aria-label="Glosarium">
     <div class="card">
       <h2>Glosarium <span class="badge" id="glBadge">…</span></h2>
-      <p class="empty-note" style="margin:-2px 0 8px">Daftar istilah (nama tokoh/tempat/gelar/item/skill) yang WAJIB dipakai konsisten oleh Terjemahan &amp; Editor TL. Sinkron ke Supabase bila sudah dikonfigurasi bawahan.</p>
+      <p class="empty-note">Daftar istilah (nama tokoh/tempat/gelar/item/skill) yang WAJIB dipakai konsisten oleh Terjemahan &amp; Editor TL. Sinkron ke Supabase bila sudah dikonfigurasi bawahan.</p>
       <input class="gl-input" id="glSearch" type="search" placeholder="Cari istilah…" aria-label="Cari istilah glosarium" style="width:100%;margin-bottom:8px" />
       <div class="gl-form" style="margin-bottom:8px">
         <input class="gl-input" id="glNewTerm" type="text" spellcheck="false" placeholder="istilah (EN)" aria-label="Istilah baru" />
@@ -1531,7 +1532,7 @@ function edReport(){
   parts.push('PERUBAHAN\n');
   if(!ed.changes.length)parts.push('Tidak ada perubahan.');
   ed.changes.slice().sort((a,b)=>a.n-b.n).forEach(c=>parts.push(edLoc(c.n)+'\n\nSebelum:\n"'+c.before+'"\n\nSesudah:\n"'+c.after+'"\n\nAlasan:\n'+c.reason+'\n'));
-  parts.push('\nPERLU DICEK ⚠️\n');
+  parts.push('\nPERLU DICEK\n');
   if(!ed.review.length)parts.push('Tidak ada.');
   ed.review.slice().sort((a,b)=>a.n-b.n).forEach(r=>parts.push(edLoc(r.n)+'\n\nTeks:\n"'+r.text+'"\n\nMasalah:\n'+r.issue+'\n\nSaran:\n'+r.suggestion+'\n'));
   return parts.join('\n');
@@ -1546,7 +1547,7 @@ function edRender(){
   $('edOutBadge').className='badge'+(complete?'':' warn');
   const pages=ed.orig.filter(l=>PAGE_RE.test(l)).length;
   $('edMeta').textContent=[...ed.providers].join(' + ')+' · '+ed.orig.length+' baris'+(pages?' · '+pages+' halaman':'')+
-    (edStructureOk()?' · struktur sama dengan file asli ✓':' · ⚠ struktur berbeda dari file asli');
+    (edStructureOk()?' · struktur sama dengan file asli ✓':' · struktur berbeda dari file asli');
   const copy=$('edCopy'),dl=$('edDl'),rep=$('edCopyReport');
   if(!copy.dataset.label){
     [[copy,'Salin hasil',ICON.copy],[dl,'Unduh .txt',ICON.down],[rep,'Salin laporan',ICON.copy]].forEach(([b,l,ic])=>{b.innerHTML='<span style="display:inline-flex">'+ic+'</span><span>'+l+'</span>';b.dataset.label=l;});
@@ -1951,7 +1952,7 @@ function trReport(){
   parts.push('\nISTILAH BARU\n');
   if(!tr.collect.length)parts.push('Tidak ada.');
   tr.collect.forEach(g=>parts.push('- '+g.from+' → '+g.to+' ('+g.kind+')'+(g.note?' — '+g.note:'')+'\n'));
-  parts.push('\nPERLU DICEK ⚠️\n');
+  parts.push('\nPERLU DICEK\n');
   if(!tr.review.length)parts.push('Tidak ada.');
   tr.review.slice().sort((a,b)=>a.n-b.n).forEach(r=>parts.push(trLoc(r.n)+'\n\nTeks:\n"'+r.text+'"\n\nMasalah:\n'+r.issue+'\n\nSaran:\n'+r.suggestion+'\n'));
   return parts.join('\n');
@@ -1983,7 +1984,7 @@ async function trRender(){
   $('trOutBadge').className='badge'+(complete?'':' warn');
   const pages=tr.orig.filter(l=>PAGE_RE.test(l)).length;
   $('trMeta').textContent=[...tr.providers].join(' + ')+' · '+tr.orig.length+' baris'+(pages?' · '+pages+' halaman':'')+
-    (trStructureOk()?' · struktur sama dengan file asli ✓':' · ⚠ struktur berbeda dari file asli');
+    (trStructureOk()?' · struktur sama dengan file asli ✓':' · struktur berbeda dari file asli');
   const copy=$('trCopy'),dl=$('trDl'),rep=$('trRep');
   if(!copy.dataset.label){
     [[copy,'Salin hasil',ICON.copy],[dl,'Unduh .txt',ICON.down],[rep,'Salin laporan',ICON.copy]].forEach(([b,l,ic])=>{b.innerHTML='<span style="display:inline-flex">'+ic+'</span><span>'+l+'</span>';b.dataset.label=l;});
