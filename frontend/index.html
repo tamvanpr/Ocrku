@@ -1192,7 +1192,7 @@ function addAI(p,mid,imgSrc,hash,reqId,opts){
   const b=el('div','bubble');
   // Thumbnail hanya untuk riwayat yang dipulihkan (gambar asli tidak disimpan); saat OCR baru,
   // gambar sudah tampak di bubble pengguna sehingga tidak diulang di sini.
-  if(imgSrc&&opts.restored){const th=el('img','src-thumb');th.src=imgSrc;th.alt='Pratinjau riwayat';b.appendChild(th);}
+  if(imgSrc&&opts.restored&&/^data:image\/(png|jpe?g|webp|avif);base64,/i.test(imgSrc)){const th=el('img','src-thumb');th.src=imgSrc;th.alt='Pratinjau riwayat';b.appendChild(th);}
   const out=el('div','ocr-result busy');
   out.append(el('span','spinner'),el('span','','Memproses…'));
   b.appendChild(out);
