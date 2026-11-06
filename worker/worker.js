@@ -1678,7 +1678,9 @@ async function supabaseReq(env, suffix, init = {}) {
     ...init,
     headers: {
       apikey: cfg.key,
-      Authorization: `Bearer ${cfg.key}`,
+      // Key 2026 (sb_secret_/sb_publishable_) bukan JWT → hanya valid via header `apikey`.
+      // Key legacy (eyJ… JWT service_role/anon) → valid via `Authorization: Bearer`.
+      ...(cfg.key.startsWith('eyJ') ? { Authorization: `Bearer ${cfg.key}` } : {}),
       ...(init.headers || {}),
     },
   }, 20000);

@@ -33,7 +33,7 @@ ocr-studio/
    - Variable name: `OCR_WORKER`
    - Service: `ocr-worker`
    - Lalu deploy ulang Pages (Deployments → Retry deployment) agar binding aktif.
-5. Buka domain `*.pages.dev`. Tab **OCR**, **Editor TL**, dan **Terjemahan** sudah terhubung ke Worker.
+5. Buka domain `*.pages.dev`. Saat ini ada **5 tab/area: OCR, Editor TL, Terjemahan, Glosarium, dan Pengaturan** — semuanya terhubung ke Worker. Pengaturan & Glosarium sekarang **halaman terpisah (tab)** di dalam aplikasi (bukan popup floating).
 
 ## Catatan
 - Bila OCR sampai error **"Respons server bukan JSON"** padahal binding sudah dipasang: hampir
@@ -62,4 +62,4 @@ ocr-studio/
   dan dipindah ke "Perlu dicek".
 - Nomor baris di laporan "Perubahan" adalah nomor baris di file asli (mulai dari 1).
 - **Terjemahan (tab Terjemahan)**: input seperti Editor TL; model menerjemahkan EN→ID dengan register formal/informal, istilah khusus tetap bahasa Inggris, prefix OCR & halaman & baris Notes dipertahankan utuh, angka berubah → masuk "Perlu dicek". Endpoint `/translate` di Worker.
-- **Glosarium**: tersimpan di Supabase (`SUPABASE_URL` + `SUPABASE_SERVICE_KEY`; SQL setup di GUIDE.md), fallback otomatis ke penyimpanan browser bila belum dikonfigurasi. Mendukung tambah/hapus/cari, simpan istilah hasil terjemahan, impor/ekspor JSON & CSV.
+- **Glosarium**: tersimpan di Supabase (`SUPABASE_URL` + `SUPABASE_SERVICE_KEY`; SQL setup di GUIDE.md), fallback otomatis ke penyimpanan browser bila belum dikonfigurasi. Mendukung tambah/hapus/cari, simpan istilah hasil terjemahan, impor/ekspor JSON & CSV. Di aplikasi, kini ada tab **Glosarium** khusus; kartu "Glosarium baru" khusus (dari hasil Terjemahan) tetap muncul di tab Terjemahan setelah menjalankan **Terjemahkan**.

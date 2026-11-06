@@ -71,11 +71,20 @@ create table if not exists glossary (
    kita memakai **service key** yang mengakses tabel tanpa terkena RLS, dan Worker
    tidak pernah mengekspos key itu ke browser.
 
-4. Ambil kredensial: **Project Settings → API**:
-   - **Project URL** → mis. `https://abcdefgh.supabase.co` → ini `SUPABASE_URL`.
-   - **service_role key** (kolom *service_role*, tanda ⚠ rahasia) → klik **Reveal** →
-     salin → ini `SUPABASE_SERVICE_KEY`. **JANGAN** pakai *anon/public* key, dan
-     jangan pernah disebarkan ke mana pun.
+4. Ambil kredensial Supabase (sesuai dashboard 2026):
+   - **Project URL**: klik tombol **Connect** (tengah atas halaman dashboard) → tampil
+     mis. `https://abcdefgh.supabase.co` → ini `SUPABASE_URL`.
+   - **Secret key**: buka sidebar kiri → **Project Settings → API Keys** → tab
+     **Publishable and secret API keys**. Ambil key tipe **secret** (`sb_secret_...`)
+     → salin → ini `SUPABASE_SERVICE_KEY`.
+     - Jika tombol **Add new API keys** tampil → klik sekali (perlu cek dahulu, tiap
+       proyek baru punya key jenis baru ini).
+     - Key format lama `anon`/`service_role` (JWT yang diawali `eyJ...`) dianggap
+       legacy & dipensiunkan Supabase akhir 2026 — tetap jalan untuk sekarang,
+       tapi gunakan `sb_secret_...` selalu kalau memungkinkan.
+
+     ⚠ Secret key hanya boleh dipakai server-side (Worker kita); kalau ada yang mencoba
+     dipakai dari browser, Supabase akan menolaknya (401). Worker kita aman.
 
 ### 2.2 Isi kredensial ke Worker
 Workers & Pages → **ocr-worker** → Settings → **Variables and Secrets** → Add:
@@ -83,10 +92,10 @@ Workers & Pages → **ocr-worker** → Settings → **Variables and Secrets** �
 | Tipe | Nama | Nilai |
 |---|---|---|
 | Text | `SUPABASE_URL` | `https://abcdefgh.supabase.co` |
-| Secret | `SUPABASE_SERVICE_KEY` | service_role key |
+| Secret | `SUPABASE_SERVICE_KEY` | `sb_secret_...` (atau key `service_role` legacy — keduanya diterima) |
 | Text (ops.) | `SUPABASE_TABLE` | default `glossary` (biarkan bila pakai SQL di atas) |
 
-Lalu **Retry deployment** Worker agar env aktif. Uji: buka situs → tab **Terjemahan** →
+Lalu **Retry deployment** Worker agar env aktif. Uji: buka situs → tab **Glosarium** →
 kartu **Glosarium** → **Muat ulang** → badge berubah jadi `Supabase · 0`.
 
 ### 2.3 Pakai glosarium di aplikasi
@@ -135,6 +144,10 @@ atau klik **Pilih file .txt** (maks 2 MB; file dipecah di penanda halaman `P1`, 
 5. **Kartu "Perlu dicek ⚠️"**: baris ambigu, baris yang terjemahannya dibatalkan
    (penanda berubah), angka yang ikut berubah, atau baris yang model buang.
 
+Kelola glosarium (tambah/hapus cari/impor-ekspor/sinkron Supabase) di tab **Glosarium**
+sendiri — di tab Terjemahan kartu Glosarium TIDAK lagi ada; ada saja kartu **"Glosarium
+baru"** yang muncul setelah menjalankan Terjemahkan.
+
 ### Aturan yang berlaku pada penerjemahan
 - **Register formal vs kasual** dipisah: dialog sopan → bahasa Indonesia formal
   (`saya`/`Anda`); dialog teman → kasual (`aku`/`kamu`, boleh `gue/lo` bila nada
@@ -173,7 +186,7 @@ Tes Koneksi di tab Custom juga tetap berfungsi seperti biasa.
 | `SUMOPOD_API_KEY` | Secret | provider sumopod | bisa `k1,k2,k3` |
 | `CUSTOM_API_KEY` | Secret | provider custom | opsional bila endpoint publik |
 | `SUPABASE_URL` | Text | glosarium | `https://xxxx.supabase.co` |
-| `SUPABASE_SERVICE_KEY` | Secret | glosarium | service_role (bukan anon!) |
+| `SUPABASE_SERVICE_KEY` | Secret | glosarium | key `sb_secret_...` (atau legacy `service_role`) |
 | `SUPABASE_TABLE` | Text | opsional | default `glossary` |
 | `ALLOWED_ORIGINS` | Text | opsional | daftar origin frontend, pisah koma |
 | `GEMINI_MODEL` / `AGNES_MODEL` / `CF_MODEL` | Text | opsional | default masing-masing |
@@ -188,7 +201,7 @@ Tes Koneksi di tab Custom juga tetap berfungsi seperti biasa.
 |---|---|
 | Badge glosarium tetap `Lokal` padahal sudah isi Supabase | `SUPABASE_URL`/`SUPABASE_SERVICE_KEY` salah atau belum Retry deployment Worker. Cek juga SQL tabel sudah di-Run. |
 | "Supabase tabel \"glossary\" belum ada" | SQL tabel belum dijalankan — lihat bagian 2.1 langkah 3. |
-| service_role ditolak / 401 | Key yang dipasang key *anon*, atau key mengandung spasi/baris baru. Tempel dulu di Notepad lalu salin ulang. |
+| Supabase 401/403 / key tidak dipakai | Key salah (mis. publishable/anon yang harus diganti ke secret), key ada spasi/baris baru, atau tabel `glossary` belum dibuat (lihat bagian 2.1). Secret key `sb_secret_...` hanya boleh dipakai dari Worker — kalau dipakai browser, Supabase langsung menolak (401). |
 | "Muat model" gagal di Sumopod | Base URL salah / key kosong. Periksa base URL `https://ai.sumopod.com/v1` + isi key. |
 | OCR via Sumopod: "menolak input gambar" | Bukti model Sumopod itu teks saja. Pindah provider OCR ke Gemini/Agnes/Cloudflare. |
 | "Tidak ada terjemahan dari model untuk baris ini" | Bagian itu gagal (timeout/limit) — bagian asli dipertahankan; klik **Lanjutkan** atau jalankan ulang. |
