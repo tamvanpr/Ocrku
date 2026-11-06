@@ -21,7 +21,7 @@ try{
   color-scheme:light dark;
   --bg:#f6f5f2; --surface:#ffffff; --surface-2:#f0eee9; --line:#e4e1d9; --line-strong:#cfcbc0;
   --ink:#1c1b19; --ink-2:#55524b; --ink-3:#8a867c;
-  --accent:#0f6b63; --accent-hover:#0b5750; --accent-soft:#e3f0ee; --on-accent:#ffffff;
+  --accent:#ea580c; --accent-hover:#c2410c; --accent-soft:#fef3ec; --on-accent:#1a0a02;
   --user:#e9eef5; --user-line:#cfdaea; --user-ink:#33475f;
   --danger:#b3261e; --danger-hover:#8f1d17; --danger-soft:#fbeceb; --danger-line:#f0cfcc;
   --on-ink:#ffffff; --toast-bg:#1c1b19; --toast-ink:#ffffff;
@@ -36,7 +36,7 @@ html[data-theme="dark"]{
   color-scheme:dark;
   --bg:#151412; --surface:#1d1c19; --surface-2:#26241f; --line:#2d2b27; --line-strong:#423f38;
   --ink:#edeae2; --ink-2:#b5b0a5; --ink-3:#8c867b;
-  --accent:#43c7b1; --accent-hover:#5ad6c2; --accent-soft:#12322d; --on-accent:#0c211d;
+  --accent:#fb923c; --accent-hover:#fdba74; --accent-soft:#3a2413; --on-accent:#1a0a02;
   --user:#242f3d; --user-line:#3a4759; --user-ink:#ccd9ec;
   --danger:#f0948c; --danger-hover:#f5a9a1; --danger-soft:#3c211e; --danger-line:#5e2d28;
   --on-ink:#171614; --toast-bg:#ece9e2; --toast-ink:#171614;
@@ -169,34 +169,34 @@ button:focus:not(:focus-visible){outline:none}
 
 /* ===== Modal Pengaturan — desain dari mockup Stitch (tab per penyedia, ringkas) ===== */
 /* Pengaturan = halaman sendiri (tab) — bukan modal */
-.settings .card{display:flex;flex-direction:column;gap:0}
-.settings .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;flex-wrap:wrap}
-.settings .modal-actions .btn{height:38px;padding:0 16px;border-radius:12px;font-size:13px}
-.settings .modal-actions .btn.primary{flex:1 1 180px;justify-content:center;font-weight:600}
-.settings .p-content{flex:1 1 auto;min-height:0;overflow-y:auto}
-.settings .field label{font-size:12px;font-weight:500;margin-bottom:6px}
-.settings .field input,.settings .field select{width:100%;height:40px;padding:0 12px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface-2);color:var(--ink);font-size:13px}
-.settings .field input:focus,.settings .field select:focus{outline:2px solid var(--accent);outline-offset:1px}
-.settings .field input[type="password"]{padding-right:38px;font-family:var(--mono)}
-.settings .p-input{position:relative}
-.settings .p-eye{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:30px;height:30px;display:grid;place-items:center;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ink-3);cursor:pointer;padding:0}
-.settings .p-eye:hover{color:var(--accent);background:var(--surface-2)}
-.settings .p-ico{font-family:'Material Symbols Outlined';font-weight:400;font-style:normal;font-size:16px;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap}
-.settings .p-ico.p-ico-on{color:var(--accent)}
-.settings .p-select{position:relative}
-.settings .p-select select{width:100%;height:40px;padding:0 34px 0 12px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface-2);color:var(--ink);font-size:13px}
-.settings .p-select select:focus{outline:2px solid var(--accent);outline-offset:1px}
-.settings .p-select option{color:var(--ink);background:var(--surface)}
-.settings .p-select .p-select-ico{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--ink-3);font-size:16px;pointer-events:none}
-.settings .p-keyrow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-.settings .p-keyrow + .p-select,
-.settings .p-keyrow + .p-input{margin-top:10px}
-.settings .p-keyrow label{margin-bottom:0}
-.settings .p-tip{display:flex;align-items:flex-start;gap:8px;margin-top:2px;padding:10px 12px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);font-size:12.5px;color:var(--ink-2);line-height:1.55}
-.settings .p-tip .p-ico{color:var(--accent);font-size:15px;line-height:1.5;margin-top:1px}
-.settings .p-tip p{margin:0}
-.settings .p-pill{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:999px;background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent);font-family:var(--mono);font-size:10px;font-weight:600;line-height:14px;white-space:nowrap}
-.settings .p-head{margin-bottom:14px}
+.sheet .card{display:flex;flex-direction:column;gap:0}
+.sheet .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;flex-wrap:wrap}
+.sheet .modal-actions .btn{height:38px;padding:0 16px;border-radius:12px;font-size:13px}
+.sheet .modal-actions .btn.primary{flex:1 1 180px;justify-content:center;font-weight:600}
+.sheet .p-content{flex:1 1 auto;min-height:0;overflow-y:auto}
+.sheet .field label{font-size:12px;font-weight:500;margin-bottom:6px}
+.sheet .field input,.sheet .field select{width:100%;height:40px;padding:0 12px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface-2);color:var(--ink);font-size:13px}
+.sheet .field input:focus,.sheet .field select:focus{outline:2px solid var(--accent);outline-offset:1px}
+.sheet .field input[type="password"]{padding-right:38px;font-family:var(--mono)}
+.sheet .p-input{position:relative}
+.sheet .p-eye{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:30px;height:30px;display:grid;place-items:center;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ink-3);cursor:pointer;padding:0}
+.sheet .p-eye:hover{color:var(--accent);background:var(--surface-2)}
+.sheet .p-ico{font-family:'Material Symbols Outlined';font-weight:400;font-style:normal;font-size:16px;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap}
+.sheet .p-ico.p-ico-on{color:var(--accent)}
+.sheet .p-select{position:relative}
+.sheet .p-select select{width:100%;height:40px;padding:0 34px 0 12px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface-2);color:var(--ink);font-size:13px}
+.sheet .p-select select:focus{outline:2px solid var(--accent);outline-offset:1px}
+.sheet .p-select option{color:var(--ink);background:var(--surface)}
+.sheet .p-select .p-select-ico{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--ink-3);font-size:16px;pointer-events:none}
+.sheet .p-keyrow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.sheet .p-keyrow + .p-select,
+.sheet .p-keyrow + .p-input{margin-top:10px}
+.sheet .p-keyrow label{margin-bottom:0}
+.sheet .p-tip{display:flex;align-items:flex-start;gap:8px;margin-top:2px;padding:10px 12px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);font-size:12.5px;color:var(--ink-2);line-height:1.55}
+.sheet .p-tip .p-ico{color:var(--accent);font-size:15px;line-height:1.5;margin-top:1px}
+.sheet .p-tip p{margin:0}
+.sheet .p-pill{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:999px;background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent);font-family:var(--mono);font-size:10px;font-weight:600;line-height:14px;white-space:nowrap}
+.sheet .p-head{margin-bottom:14px}
 .p-head-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .p-lock{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink-2);font-size:11px;font-weight:600}
 .p-lock .p-ico{color:var(--accent);font-size:13px;line-height:1}
@@ -252,16 +252,15 @@ button:focus:not(:focus-visible){outline:none}
   .modal{padding:20px}
   .p-tab{font-size:11.5px;padding:0 4px}
   .tab{font-size:12px;height:30px;border-radius:8px}
-  .glossary,.settings{padding:10px}
+  .sheet{padding:14px}
 }
 @media(max-width:400px){
   .tabbar{padding:5px 6px;gap:3px}
-  .glossary,.settings{padding:10px}
-  .settings .modal-actions{gap:8px}
-  .settings .modal-actions .btn{height:38px;padding:0 14px;font-size:12px;border-radius:11px}
-  .settings .modal-actions .btn.primary{height:38px;font-size:12px}
-}
-@media(prefers-reduced-motion:reduce){
+  .sheet{padding:14px}
+  .sheet .modal-actions{gap:8px}
+  .sheet .modal-actions .btn{height:38px;padding:0 14px;font-size:12px;border-radius:11px}
+  .sheet .modal-actions .btn.primary{height:38px;font-size:12px}
+}@media(prefers-reduced-motion:reduce){
   *{animation-duration:.01ms!important;transition-duration:.01ms!important}
   .chat{scroll-behavior:auto}
 }
@@ -273,16 +272,12 @@ button:focus:not(:focus-visible){outline:none}
 .tab[aria-selected="true"]{background:var(--accent-soft);color:var(--accent)}
 
 /* ---------- editor TL, terjemahan, glosarium, pengaturan ---------- */
-.editor,.trans,.glossary,.settings{display:none;flex:1;min-height:0;overflow-y:auto;padding:14px 16px;background:var(--bg);flex-direction:column;gap:12px;overscroll-behavior:contain}
+.editor,.trans{display:none;flex:1;min-height:0;overflow-y:auto;padding:14px 16px;background:var(--bg);flex-direction:column;gap:12px;overscroll-behavior:contain}
 .editor.dragover,.trans.dragover{outline:2px dashed var(--accent);outline-offset:-10px;background:var(--accent-soft)}
 .app[data-mode="editor"] .editor{display:flex}
 .app[data-mode="trans"] .trans{display:flex}
-.app[data-mode="glossary"] .glossary{display:flex}
-.app[data-mode="settings"] .settings{display:flex}
 .app[data-mode="editor"] .chat,.app[data-mode="editor"] .composer{display:none}
 .app[data-mode="trans"] .chat,.app[data-mode="trans"] .composer{display:none}
-.app[data-mode="glossary"] .chat,.app[data-mode="glossary"] .composer{display:none}
-.app[data-mode="settings"] .chat,.app[data-mode="settings"] .composer{display:none}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px;flex-shrink:0}
 .card h2{font-size:13.5px;font-weight:650;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .badge{font-size:11px;font-weight:600;background:var(--surface-2);color:var(--ink-2);border-radius:999px;padding:1px 9px}
@@ -309,12 +304,12 @@ button:focus:not(:focus-visible){outline:none}
 @media(max-width:560px){
   .tabbar{padding:6px 8px;gap:3px}
   .tab{font-size:12px;height:30px;border-radius:8px}
-  .editor,.trans,.glossary,.settings{padding:10px}
+  .editor,.trans,.sheet{padding:14px}
 }
 
 /* ---------- glosarium ---------- */
-.gl-list{max-height:320px;overflow-y:auto}.glossary .gl-list{max-height:none;overflow:visible}
-.glossary .empty-note{margin:0 0 8px;font-size:12.5px}
+.gl-list{max-height:320px;overflow-y:auto}.glSheet .gl-list{max-height:none;overflow:visible}
+.glSheet .empty-note{margin:0 0 8px;font-size:12.5px}
 .gl-row{display:flex;align-items:flex-start;gap:8px;padding:8px 2px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.5;flex-wrap:wrap}
 .gl-row:first-child{border-top:none}
 .gl-term{font-family:var(--mono);font-weight:650;font-size:12px;word-break:break-word}
@@ -332,6 +327,21 @@ button:focus:not(:focus-visible){outline:none}
 .p-loadrow .p-loadinput{flex:1;min-width:0}
 .p-loadrow input{width:100%;height:40px;padding:0 10px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--ink);font-size:13px}
 .p-loadrow input:focus{outline:2px solid var(--accent);outline-offset:1px}
+
+/* ---------- bottom sheet (Glosarium & Pengaturan) ---------- */
+.sheet{position:fixed;left:50%;bottom:0;transform:translate(-50%,100%);width:min(100%,480px);max-height:88dvh;background:var(--surface);border:1px solid var(--line-strong);border-bottom:none;border-radius:18px 18px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.35);z-index:1200;display:none;flex-direction:column;transition:transform .24s ease;overflow-y:auto}
+.sheet.open{display:flex;transform:translate(-50%,0)}
+.sheet-head{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--line)}
+.sheet-head h3{font-size:14px;font-weight:650;margin:0}
+.sheet-close{width:32px;height:32px;display:grid;place-items:center;border:none;background:transparent;color:var(--ink-2);cursor:pointer;font-size:18px;border-radius:8px}
+.sheet-close:hover{background:var(--surface-2);color:var(--ink)}
+.sheet .card{margin:0 14px 14px}
+.sheet-mask{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);z-index:1100;opacity:0;pointer-events:none;transition:opacity .2s}
+.sheet-mask.open{opacity:1;pointer-events:auto}
+@media(max-width:480px){
+  .sheet{width:100%;border-radius:18px 18px 0 0}
+  .sheet .card{margin:0 12px 12px;padding:14px}
+}
 </style>
 </head>
 <body>
@@ -358,8 +368,11 @@ button:focus:not(:focus-visible){outline:none}
         </select>
       </div>
       <button class="icon-btn" id="themeBtn" type="button" aria-label="Ganti tema" title="Ganti tema"></button>
-      <button class="icon-btn" id="settingsBtn" type="button" aria-label="Pengaturan model" title="Pengaturan model">
+      <button class="icon-btn" id="settingsBtn" type="button" aria-label="Glosarium &amp; Pengaturan" title="Glosarium &amp; Pengaturan">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="7" r="2.2" fill="var(--surface)"/><circle cx="15" cy="17" r="2.2" fill="var(--surface)"/></svg>
+      </button>
+      <button class="icon-btn" id="glossBtn" type="button" aria-label="Glosarium" title="Glosarium">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
       </button>
       <button class="icon-btn" id="clearBtn" type="button" aria-label="Bersihkan riwayat" title="Bersihkan riwayat">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -371,8 +384,6 @@ button:focus:not(:focus-visible){outline:none}
     <button class="tab" role="tab" id="tabOcr" aria-selected="true" type="button">OCR</button>
     <button class="tab" role="tab" id="tabEdit" aria-selected="false" type="button">Editor TL</button>
     <button class="tab" role="tab" id="tabTrans" aria-selected="false" type="button">Terjemahan</button>
-    <button class="tab" role="tab" id="tabGl" aria-selected="false" type="button">Glosarium</button>
-    <button class="tab" role="tab" id="tabSet" aria-selected="false" type="button">Pengaturan</button>
   </nav>
 
   <main class="chat" id="chat" aria-live="polite">
@@ -457,9 +468,24 @@ button:focus:not(:focus-visible){outline:none}
     </div>
   </section>
 
-  <section class="glossary" id="glView" aria-label="Glosarium">
+  <footer class="composer">
+    <div class="composer-row">
+      <button class="attach-btn" id="uploadBtn" type="button" aria-label="Pilih gambar" title="Pilih gambar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <input type="file" id="fileInput" accept="image/*" multiple hidden />
+      <div class="file-indicator" id="fileIndicator" role="button" tabindex="0" aria-label="Pilih gambar"></div>
+      <button class="send-btn" id="sendBtn" type="button" aria-label="Jalankan OCR"></button>
+    </div>
+    <div class="progress" id="progress" aria-hidden="true"><i id="progressBar"></i></div>
+  </footer>
+
+  <section class="sheet" id="glSheet" aria-label="Glosarium">
+    <div class="sheet-head">
+      <h3>Glosarium <span class="badge" id="glBadge">…</span></h3>
+      <button class="sheet-close" type="button" data-close="glSheet" aria-label="Tutup"><span class="p-ico">close</span></button>
+    </div>
     <div class="card">
-      <h2>Glosarium <span class="badge" id="glBadge">…</span></h2>
       <p class="empty-note">Istilah yang WAJIB dipakai konsisten oleh Terjemahan &amp; Editor TL.</p>
       <input class="gl-input" id="glSearch" type="search" placeholder="Cari istilah…" aria-label="Cari istilah glosarium" style="width:100%;margin-bottom:8px" />
       <div class="gl-form" style="margin-bottom:8px">
@@ -487,157 +513,150 @@ button:focus:not(:focus-visible){outline:none}
     </div>
   </section>
 
-  <footer class="composer">
-    <div class="composer-row">
-      <button class="attach-btn" id="uploadBtn" type="button" aria-label="Pilih gambar" title="Pilih gambar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-      </button>
-      <input type="file" id="fileInput" accept="image/*" multiple hidden />
-      <div class="file-indicator" id="fileIndicator" role="button" tabindex="0" aria-label="Pilih gambar"></div>
-      <button class="send-btn" id="sendBtn" type="button" aria-label="Jalankan OCR"></button>
+  <section class="sheet" id="setSheet" aria-label="Pengaturan">
+    <div class="sheet-head">
+      <h3>Pengaturan</h3>
+      <button class="sheet-close" type="button" data-close="setSheet" aria-label="Tutup"><span class="p-ico">close</span></button>
     </div>
-    <div class="progress" id="progress" aria-hidden="true"><i id="progressBar"></i></div>
-  </footer>
-
-  <!-- Pengaturan model — halaman penuh (tab), bukan popup -->
-  <section class="settings" id="settingsView" aria-label="Pengaturan">
-  <div class="card">
-    <div class="p-head">
-      <div class="p-head-top">
-        <span class="p-lock"><span class="p-ico">lock</span><span>Penyimpanan Lokal Aman</span></span>
-        <div class="p-head-actions">
-          <button class="p-test" id="testKeyBtn" type="button">Tes Koneksi</button>
-        </div>
-      </div>
-      <div class="p-title-row">
-        <h3 id="setTitle">Pengaturan</h3>
-        <span class="p-badge"><i class="p-dot"></i>Auto Key Rotation</span>
-      </div>
-      <div class="p-callout">
-        <span class="p-ico">info</span>
-        <p>Key milikmu disimpan <span class="p-strong">hanya di browser ini</span>. Kolom key bisa berisi: <code>k1,k2,k3</code> — jika kena limit (429/401), otomatis lanjut ke key berikutnya.</p>
-      </div>
-      <div class="p-test-status" id="testKeyStatus" role="status"></div>
-    </div>
-
-    <div class="p-tabs" role="tablist" aria-label="Penyedia AI">
-      <button class="p-tab" id="pt-gemini" data-p="gemini" role="tab" aria-controls="pane-gemini" aria-selected="true" type="button">Gemini</button>
-      <button class="p-tab" id="pt-agnes" data-p="agnes" role="tab" aria-controls="pane-agnes" aria-selected="false" type="button">Agnes</button>
-      <button class="p-tab" id="pt-cloudflare" data-p="cloudflare" role="tab" aria-controls="pane-cloudflare" aria-selected="false" type="button">Cloudflare</button>
-      <button class="p-tab" id="pt-sumopod" data-p="sumopod" role="tab" aria-controls="pane-sumopod" aria-selected="false" type="button">Sumopod</button>
-      <button class="p-tab" id="pt-custom" data-p="custom" role="tab" aria-controls="pane-custom" aria-selected="false" type="button">Custom</button>
-    </div>
-
-    <div class="p-content">
-      <div class="p-pane active" id="pane-gemini" data-pane="gemini" role="tabpanel" aria-labelledby="pt-gemini">
-        <div class="field">
-          <label for="setGemini">Model</label>
-          <div class="p-select"><select id="setGemini"></select><span class="p-select-ico">expand_more</span></div>
-        </div>
-        <div class="field">
-          <div class="p-keyrow"><label for="setGeminiKey">API key</label><span class="p-pill">Fallback kuota otomatis</span></div>
-          <div class="p-input">
-            <input type="password" id="setGeminiKey" autocomplete="off" spellcheck="false" placeholder="AIza… — beberapa key: k1,k2,k3" />
-            <button class="p-eye" type="button" data-toggle="setGeminiKey" aria-label="Tampilkan / sembunyikan API key"><span class="p-ico">visibility</span></button>
+    <div class="card">
+      <div class="p-head">
+        <div class="p-head-top">
+          <span class="p-lock"><span class="p-ico">lock</span><span>Penyimpanan Lokal Aman</span></span>
+          <div class="p-head-actions">
+            <button class="p-test" id="testKeyBtn" type="button">Tes Koneksi</button>
           </div>
         </div>
-        <div class="p-tip">
-          <span class="p-ico">verified_user</span>
-          <p>Tanpa key: Worker memakai key owner. Dengan key: kuota Gemini-mu sendiri — model boleh apa pun.</p>
+        <div class="p-title-row">
+          <span class="p-badge"><i class="p-dot"></i>Auto Key Rotation</span>
         </div>
+        <div class="p-callout">
+          <span class="p-ico">info</span>
+          <p>Key milikmu disimpan <span class="p-strong">hanya di browser ini</span>. Kolom key bisa berisi: <code>k1,k2,k3</code> — jika kena limit (429/401), otomatis lanjut ke key berikutnya.</p>
+        </div>
+        <div class="p-test-status" id="testKeyStatus" role="status"></div>
       </div>
 
-      <div class="p-pane" id="pane-agnes" data-pane="agnes" role="tabpanel" aria-labelledby="pt-agnes">
-        <div class="field">
-          <label for="setAgnes">Model</label>
-          <div class="p-select"><select id="setAgnes"></select><span class="p-select-ico">expand_more</span></div>
-        </div>
-        <div class="field">
-          <label for="setAgnesKey">API key</label>
-          <div class="p-input">
-            <input type="password" id="setAgnesKey" autocomplete="off" spellcheck="false" placeholder="key Agnes… — beberapa key: k1,k2,k3" />
-            <button class="p-eye" type="button" data-toggle="setAgnesKey" aria-label="Tampilkan / sembunyikan API key"><span class="p-ico">visibility</span></button>
-          </div>
-        </div>
-        <div class="p-tip">
-          <span class="p-ico">table_chart</span>
-          <p>Model khusus optimasi dokumen &amp; tabel terstruktur untuk OCR tingkat lanjut.</p>
-        </div>
+      <div class="p-tabs" role="tablist" aria-label="Penyedia AI">
+        <button class="p-tab" id="pt-gemini" data-p="gemini" role="tab" aria-controls="pane-gemini" aria-selected="true" type="button">Gemini</button>
+        <button class="p-tab" id="pt-agnes" data-p="agnes" role="tab" aria-controls="pane-agnes" aria-selected="false" type="button">Agnes</button>
+        <button class="p-tab" id="pt-cloudflare" data-p="cloudflare" role="tab" aria-controls="pane-cloudflare" aria-selected="false" type="button">Cloudflare</button>
+        <button class="p-tab" id="pt-sumopod" data-p="sumopod" role="tab" aria-controls="pane-sumopod" aria-selected="false" type="button">Sumopod</button>
+        <button class="p-tab" id="pt-custom" data-p="custom" role="tab" aria-controls="pane-custom" aria-selected="false" type="button">Custom</button>
       </div>
 
-      <div class="p-pane" id="pane-cloudflare" data-pane="cloudflare" role="tabpanel" aria-labelledby="pt-cloudflare">
-        <div class="field">
-          <div class="p-keyrow">
-            <label for="setCf">Model</label>
-            <span class="p-pill"><span class="p-ico">bolt</span>Zero-config / Siap digunakan</span>
+      <div class="p-content">
+        <div class="p-pane active" id="pane-gemini" data-pane="gemini" role="tabpanel" aria-labelledby="pt-gemini">
+          <div class="field">
+            <label for="setGemini">Model</label>
+            <div class="p-select"><select id="setGemini"></select><span class="p-select-ico">expand_more</span></div>
           </div>
-          <div class="p-select"><select id="setCf"></select><span class="p-select-ico">expand_more</span></div>
+          <div class="field">
+            <div class="p-keyrow"><label for="setGeminiKey">API key</label><span class="p-pill">Fallback kuota otomatis</span></div>
+            <div class="p-input">
+              <input type="password" id="setGeminiKey" autocomplete="off" spellcheck="false" placeholder="AIza… — beberapa key: k1,k2,k3" />
+              <button class="p-eye" type="button" data-toggle="setGeminiKey" aria-label="Tampilkan / sembunyikan API key"><span class="p-ico">visibility</span></button>
+            </div>
+          </div>
+          <div class="p-tip">
+            <span class="p-ico">verified_user</span>
+            <p>Tanpa key: Worker memakai key owner. Dengan key: kuota Gemini-mu sendiri — model boleh apa pun.</p>
+          </div>
         </div>
-        <div class="p-tip">
-          <span class="p-ico">cloud_done</span>
-          <p>Lewat binding <code>[ai]</code> Worker — tanpa API key sama sekali. Bila model utama gagal, model lain dicoba otomatis.</p>
+
+        <div class="p-pane" id="pane-agnes" data-pane="agnes" role="tabpanel" aria-labelledby="pt-agnes">
+          <div class="field">
+            <label for="setAgnes">Model</label>
+            <div class="p-select"><select id="setAgnes"></select><span class="p-select-ico">expand_more</span></div>
+          </div>
+          <div class="field">
+            <label for="setAgnesKey">API key</label>
+            <div class="p-input">
+              <input type="password" id="setAgnesKey" autocomplete="off" spellcheck="false" placeholder="key Agnes… — beberapa key: k1,k2,k3" />
+              <button class="p-eye" type="button" data-toggle="setAgnesKey" aria-label="Tampilkan / sembunyikan API key"><span class="p-ico">visibility</span></button>
+            </div>
+          </div>
+          <div class="p-tip">
+            <span class="p-ico">table_chart</span>
+            <p>Model khusus optimasi dokumen &amp; tabel terstruktur untuk OCR tingkat lanjut.</p>
+          </div>
+        </div>
+
+        <div class="p-pane" id="pane-cloudflare" data-pane="cloudflare" role="tabpanel" aria-labelledby="pt-cloudflare">
+          <div class="field">
+            <div class="p-keyrow">
+              <label for="setCf">Model</label>
+              <span class="p-pill"><span class="p-ico">bolt</span>Zero-config / Siap digunakan</span>
+            </div>
+            <div class="p-select"><select id="setCf"></select><span class="p-select-ico">expand_more</span></div>
+          </div>
+          <div class="p-tip">
+            <span class="p-ico">cloud_done</span>
+            <p>Lewat binding <code>[ai]</code> Worker — tanpa API key sama sekali. Bila model utama gagal, model lain dicoba otomatis.</p>
+          </div>
+        </div>
+
+        <div class="p-pane" id="pane-sumopod" data-pane="sumopod" role="tabpanel" aria-labelledby="pt-sumopod">
+          <div class="field">
+            <label for="setSumopodUrl">Base URL</label>
+            <input type="url" id="setSumopodUrl" inputmode="url" spellcheck="false" placeholder="https://ai.sumopod.com/v1" />
+          </div>
+          <div class="field">
+            <label for="setSumopodModel">Model</label>
+            <div class="p-loadrow">
+              <div class="p-loadinput"><input type="text" id="setSumopodModel" list="dlSumopod" spellcheck="false" placeholder="klik “Muat model” lalu pilih" /></div>
+              <button class="btn" id="loadSumopodModels" type="button">Muat model</button>
+            </div>
+            <datalist id="dlSumopod"></datalist>
+          </div>
+          <div class="field">
+            <div class="p-keyrow"><label for="setSumopodKey">API key</label><span class="p-pill">Wajib</span></div>
+            <div class="p-input">
+              <input type="password" id="setSumopodKey" autocomplete="off" spellcheck="false" placeholder="key Sumopod… — beberapa key: k1,k2,k3" />
+              <button class="p-eye" type="button" data-toggle="setSumopodKey" aria-label="Tampilkan / sembunyikan API key"><span class="p-ico">visibility</span></button>
+            </div>
+          </div>
+          <div class="p-tip">
+            <span class="p-ico">chat</span>
+            <p>Endpoint OpenAI Sumopod (<code>https://ai.sumopod.com/v1</code>), dukung multi-key. Klaim resmi Sumopod: <span class="p-strong">teks saja</span> — Editor TL &amp; Terjemahan aman. OCR via model vision tetap bisa dicoba; bila model menolak gambar, muncul pesan jelas.</p>
+          </div>
+        </div>
+
+        <div class="p-pane" id="pane-custom" data-pane="custom" role="tabpanel" aria-labelledby="pt-custom">
+          <div class="field">
+            <label for="setCustomUrl">Base URL</label>
+            <input type="url" id="setCustomUrl" inputmode="url" spellcheck="false" placeholder="https://api.openai.com/v1 atau https://openrouter.ai/api/v1" />
+          </div>
+          <div class="field">
+            <label for="setCustomModel">Model</label>
+            <div class="p-loadrow">
+              <div class="p-loadinput"><input type="text" id="setCustomModel" list="dlCustom" spellcheck="false" placeholder="misal: gpt-4o, claude-3-5-sonnet, deepseek-chat" /></div>
+              <button class="btn" id="loadCustomModels" type="button">Muat model</button>
+            </div>
+            <datalist id="dlCustom"></datalist>
+          </div>
+          <div class="field">
+            <div class="p-keyrow"><label for="setCustomKey">API key</label><span class="p-pill">Opsional</span></div>
+            <div class="p-input">
+              <input type="password" id="setCustomKey" autocomplete="off" spellcheck="false" placeholder="sk-... (opsional jika self-hosted)" />
+              <button class="p-eye" type="button" data-toggle="setCustomKey" aria-label="Tampilkan / sembunyikan API key"><span class="p-ico">visibility</span></button>
+            </div>
+          </div>
+          <div class="p-tip">
+            <span class="p-ico">terminal</span>
+            <p>Endpoint OpenAI-compatible apa pun (OpenRouter, Groq, vLLM, dsb). <span class="p-strong">Wajib https.</span></p>
+          </div>
         </div>
       </div>
-
-      <div class="p-pane" id="pane-sumopod" data-pane="sumopod" role="tabpanel" aria-labelledby="pt-sumopod">
-        <div class="field">
-          <label for="setSumopodUrl">Base URL</label>
-          <input type="url" id="setSumopodUrl" inputmode="url" spellcheck="false" placeholder="https://ai.sumopod.com/v1" />
-        </div>
-        <div class="field">
-          <label for="setSumopodModel">Model</label>
-          <div class="p-loadrow">
-            <div class="p-loadinput"><input type="text" id="setSumopodModel" list="dlSumopod" spellcheck="false" placeholder="klik “Muat model” lalu pilih" /></div>
-            <button class="btn" id="loadSumopodModels" type="button">Muat model</button>
-          </div>
-          <datalist id="dlSumopod"></datalist>
-        </div>
-        <div class="field">
-          <div class="p-keyrow"><label for="setSumopodKey">API key</label><span class="p-pill">Wajib</span></div>
-          <div class="p-input">
-            <input type="password" id="setSumopodKey" autocomplete="off" spellcheck="false" placeholder="key Sumopod… — beberapa key: k1,k2,k3" />
-            <button class="p-eye" type="button" data-toggle="setSumopodKey" aria-label="Tampilkan / sembunyikan API key"><span class="p-ico">visibility</span></button>
-          </div>
-        </div>
-        <div class="p-tip">
-          <span class="p-ico">chat</span>
-          <p>Endpoint OpenAI Sumopod (<code>https://ai.sumopod.com/v1</code>), dukung multi-key. Klaim resmi Sumopod: <span class="p-strong">teks saja</span> — Editor TL &amp; Terjemahan aman. OCR via model vision tetap bisa dicoba; bila model menolak gambar, muncul pesan jelas.</p>
-        </div>
-      </div>
-
-      <div class="p-pane" id="pane-custom" data-pane="custom" role="tabpanel" aria-labelledby="pt-custom">
-        <div class="field">
-          <label for="setCustomUrl">Base URL</label>
-          <input type="url" id="setCustomUrl" inputmode="url" spellcheck="false" placeholder="https://api.openai.com/v1 atau https://openrouter.ai/api/v1" />
-        </div>
-        <div class="field">
-          <label for="setCustomModel">Model</label>
-          <div class="p-loadrow">
-            <div class="p-loadinput"><input type="text" id="setCustomModel" list="dlCustom" spellcheck="false" placeholder="misal: gpt-4o, claude-3-5-sonnet, deepseek-chat" /></div>
-            <button class="btn" id="loadCustomModels" type="button">Muat model</button>
-          </div>
-          <datalist id="dlCustom"></datalist>
-        </div>
-        <div class="field">
-          <div class="p-keyrow"><label for="setCustomKey">API key</label><span class="p-pill">Opsional</span></div>
-          <div class="p-input">
-            <input type="password" id="setCustomKey" autocomplete="off" spellcheck="false" placeholder="sk-... (opsional jika self-hosted)" />
-            <button class="p-eye" type="button" data-toggle="setCustomKey" aria-label="Tampilkan / sembunyikan API key"><span class="p-ico">visibility</span></button>
-          </div>
-        </div>
-        <div class="p-tip">
-          <span class="p-ico">terminal</span>
-          <p>Endpoint OpenAI-compatible apa pun (OpenRouter, Groq, vLLM, dsb). <span class="p-strong">Wajib https.</span></p>
-        </div>
+      <div class="modal-actions">
+        <button class="btn" id="settingsReset" type="button">Batal</button>
+        <button class="btn" id="settingsDefault" type="button">Reset</button>
+        <button class="btn primary" id="settingsSave" type="button"><span class="p-ico">check_circle</span>Simpan Pengaturan</button>
       </div>
     </div>
-    <div class="modal-actions">
-      <button class="btn" id="settingsReset" type="button">Batal</button>
-      <button class="btn" id="settingsDefault" type="button">Reset</button>
-      <button class="btn primary" id="settingsSave" type="button"><span class="p-ico">check_circle</span>Simpan Pengaturan</button>
-    </div>
-  </div>
-</section>
+  </section>
+
+  <div class="sheet-mask" id="sheetMask" aria-hidden="true"></div>
+
 </div>
 
 <!-- Alert / konfirmasi -->
@@ -843,10 +862,35 @@ function openSettings(){
   $('setCustomKey').value=settings.customKey||'';
   setProvTab(provider); /* buka pada tab penyedia yang sedang aktif di header */
 }
-$('settingsBtn').onclick=()=>{openSettings();setMode('settings');};
-modelCaption.onclick=()=>{openSettings();setMode('settings');};
-$('tabGl').onclick=()=>{openSettings();setMode('glossary');};
-$('tabSet').onclick=()=>{openSettings();setMode('settings');};
+function openGlossarySheet(){
+  openSheet('glSheet');
+}
+function openSettingsSheet(){
+  openSettings();
+  openSheet('setSheet');
+}
+function openSheet(id){
+  const s=$(id);
+  if(!s)return;
+  s.classList.add('open');
+  const mask=$('sheetMask');
+  if(mask){mask.classList.add('open');}
+  modalOpen++;
+}
+function closeSheet(id){
+  const s=$(id);
+  if(!s)return;
+  s.classList.remove('open');
+  const mask=$('sheetMask');
+  if(mask)mask.classList.remove('open');
+  modalOpen=Math.max(0,modalOpen-1);
+}
+$('settingsBtn').onclick=openSettingsSheet;
+modelCaption.onclick=openSettingsSheet;
+$('glossBtn').onclick=openGlossarySheet;
+$('sheetMask').onclick=()=>{closeSheet('setSheet');closeSheet('glSheet');};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSheet('setSheet');closeSheet('glSheet');}});
+document.querySelectorAll('.sheet-close').forEach(b=>b.addEventListener('click',()=>closeSheet(b.dataset.close)));
 document.querySelectorAll('.p-eye').forEach((b)=>b.addEventListener('click',()=>{
   const inp=document.getElementById(b.dataset.toggle);const ic=b.querySelector('.p-ico');
   if(!inp||!ic)return;
@@ -898,7 +942,7 @@ function doSaveSettings(){
   settings.customKey=$('setCustomKey').value.trim();
   settings.customModel=($('setCustomModel').value||'').replace(/[\r\n]+/g,' ').trim().slice(0,120);
   settings.customUrl=($('setCustomUrl').value||'').trim().slice(0,250);
-  saveSettings();refreshHome();showToast('Pengaturan disimpan');
+  saveSettings();refreshHome();closeSheet('setSheet');showToast('Pengaturan disimpan');
 }
 $('settingsSave').onclick=()=>{
   const b=$('settingsSave');const orig=b.innerHTML;b.disabled=true;
@@ -1340,14 +1384,10 @@ function setMode(m){
   $('tabOcr').setAttribute('aria-selected',String(m==='ocr'));
   $('tabEdit').setAttribute('aria-selected',String(m==='editor'));
   $('tabTrans').setAttribute('aria-selected',String(m==='trans'));
-  $('tabGl').setAttribute('aria-selected',String(m==='glossary'));
-  $('tabSet').setAttribute('aria-selected',String(m==='settings'));
 }
 $('tabOcr').onclick=()=>setMode('ocr');
 $('tabEdit').onclick=()=>setMode('editor');
 $('tabTrans').onclick=()=>setMode('trans');
-$('tabGl').onclick=()=>setMode('glossary');
-$('tabSet').onclick=()=>setMode('settings');
 
 const edInput=$('edInput'), edFile=$('edFile'), edRun=$('edRun'), edRestart=$('edRestart'), edStatus=$('edStatus'),
   edResults=$('edResults'), edProgress=$('edProgress'), edBar=$('edBar'), editorView=$('editorView');
@@ -1741,7 +1781,7 @@ function parseGlossText(text){
   if(!s)throw new Error('File kosong.');
   if(s[0]==='{'||s[0]==='['){
     const j=JSON.parse(s);
-    const arr=Array.isArray(j)?j:(Array.isArray(j?.entries)?j.entries:Array.isArray(j?.glossary)?j.glossary:null);
+    const arr=Array.isArray(j)?j:(Array.isArray(j?.entries)?j.entries:Array.isArray(j?.glSheet)?j.glSheet:null);
     if(!arr)throw new Error('JSON harus berupa array entri atau {entries:[...]}.');
     return arr;
   }
@@ -1897,7 +1937,7 @@ async function trProcess(from){
         const i=l.n-1;
         if(i>=0&&i<tr.orig.length&&typeof l.t==='string')tr.out[i]=l.t;
       }
-      for(const g of data.glossary||[])trAddCollect(g);
+      for(const g of data.glSheet||[])trAddCollect(g);
       for(const r of data.review||[])tr.review.push(r);
     }
     tr.next=k+1;
