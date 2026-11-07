@@ -683,7 +683,7 @@ function scrub(s) {
     .replace(/\bsk-[A-Za-z0-9_-]{16,}\b/g, '***')
     .replace(/\bghp_[A-Za-z0-9]{20,}\b/g, '***')
     .replace(/\bsb_(?:secret|publishable|anon)_[A-Za-z0-9_-]{10,}\b/gi, '***')
-    .replace(/\beyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}\b/g, '***')
+    .replace(/\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g, '***')
     .replace(/(Bearer\s+)[A-Za-z0-9._~+/=-]{8,}/gi, '$1***');
 }
 
@@ -792,6 +792,10 @@ function cors(res, env, origin) {
   } // origin tak dikenal: tidak ada header → browser memblokir
   h.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   h.set('Access-Control-Allow-Headers', 'Content-Type');
+  // Header keamanan standar untuk seluruh respons API worker.
+  h.set('X-Content-Type-Options', 'nosniff');
+  h.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  h.set('Permissions-Policy', 'camera=(), geolocation=(), microphone=(), payment=()');
   h.set('Access-Control-Max-Age', '86400');
   return new Response(res.body, { status: res.status, headers: h });
 }
@@ -1698,6 +1702,19 @@ async function supabaseReq(env, suffix, init = {}) {
   return { resp, cfg };
 }
 
+// ===== Glosarium per-ruang (workspace) =====
+// Kode ruang: 4–64 char [A-Za-z0-9_-]. Beda kode = glosarium terpisah.
+// Tanpa kode → 'default' (kompatibel dengan frontend lama yang belum kirim ws).
+const WORKSPACE_RE = /^[A-Za-z0-9_-]{4,64}$/;
+function glossWorkspace(p) {
+  const t = String(p || '').trim();
+  if (!t) return 'default';
+  return WORKSPACE_RE.test(t) ? t : null;
+}
+function missingWorkspaceColumn(b) {
+  return /PGRST204/i.test(b) || (/workspace/i.test(b) && /does not exist|could not find/i.test(b));
+}
+
 async function handleGlossary(request, env, origin) {
   const method = request.method;
   try {
@@ -1710,12 +1727,20 @@ async function handleGlossary(request, env, origin) {
     }
 
     if (method === 'GET') {
-      const { resp, cfg } = await supabaseReq(env, '?select=id,term,translation,kind,note&order=term.asc&limit=2000', {});
+      const q = new URL(request.url);
+      const ws = glossWorkspace(q.searchParams.get('ws') || 'default');
+      if (!ws) {
+        return cors(json({ error: 'Kode ruang glosarium tidak valid: pakai 4–64 huruf/angka/underskor.' }, 400), env, origin);
+      }
+      const { resp, cfg } = await supabaseReq(env, `?select=id,term,translation,kind,note&workspace=eq.${encodeURIComponent(ws)}&order=term.asc&limit=2000`, {});
       if (resp.status === 404) {
         return cors(json({ error: `Supabase tabel "${cfg.table}" belum ada — jalankan SQL setup dari GUIDE.md dulu.` }, 502), env, origin);
       }
       if (!resp.ok) {
         const b = scrub((await resp.text()).slice(0, 300));
+        if (missingWorkspaceColumn(b)) {
+          return cors(json({ error: 'Kolom "workspace" belum ada di tabel glosarium — jalankan SQL upgrade (GUIDE.md bagian 2.1b) dulu.' }, 502), env, origin);
+        }
         return cors(json({ error: `Supabase gagal membaca glosarium (${resp.status}): ${b}` }, 502), env, origin);
       }
       const data = await resp.json().catch(() => []);
@@ -1728,7 +1753,7 @@ async function handleGlossary(request, env, origin) {
           note: String(e?.note || ''),
         }))
         .filter((e) => e.term);
-      return cors(json({ ok: true, source: 'supabase', table: cfg.table, entries }), env, origin);
+      return cors(json({ ok: true, source: 'supabase', workspace: ws, table: cfg.table, entries }), env, origin);
     }
 
     if (method === 'POST') {
@@ -1739,6 +1764,10 @@ async function handleGlossary(request, env, origin) {
       let body;
       try { body = await request.json(); }
       catch { return cors(json({ error: 'Body JSON tidak valid.' }, 400), env, origin); }
+      const ws = glossWorkspace(body?.workspace || body?.ws || 'default');
+      if (!ws) {
+        return cors(json({ error: 'Kode ruang glosarium tidak valid: pakai 4–64 huruf/angka/underskor.' }, 400), env, origin);
+      }
       const mode = String(body?.mode || 'merge').toLowerCase() === 'replace' ? 'replace' : 'merge';
       const list = (Array.isArray(body?.entries) ? body.entries : []).map(sanitizeGlossEntry).filter(Boolean);
       if (!list.length) {
@@ -1748,17 +1777,35 @@ async function handleGlossary(request, env, origin) {
         return cors(json({ error: 'Terlalu banyak entri sekaligus (maks 500).' }, 413), env, origin);
       }
       if (mode === 'replace') {
-        const del = await supabaseReq(env, '?term=not.is.null', { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
+        const del = await supabaseReq(env, `?workspace=eq.${encodeURIComponent(ws)}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
         if (!del.resp.ok) {
           const b = scrub((await del.resp.text()).slice(0, 300));
-          return cors(json({ error: `Supabase gagal mengosongkan tabel (${del.resp.status}): ${b}` }, 502), env, origin);
+          if (missingWorkspaceColumn(b)) {
+            return cors(json({ error: 'Kolom "workspace" belum ada di tabel glosarium — jalankan SQL upgrade (GUIDE.md bagian 2.1b) dulu.' }, 502), env, origin);
+          }
+          return cors(json({ error: `Supabase gagal mengosongkan ruang (${del.resp.status}): ${b}` }, 502), env, origin);
         }
       }
-      const { resp } = await supabaseReq(env, '?on_conflict=term', {
+      const rows = list.map((e) => ({ ...e, workspace: ws }));
+      let { resp } = await supabaseReq(env, '?on_conflict=workspace,term', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
-        body: JSON.stringify(list),
+        body: JSON.stringify(rows),
       });
+      if (!resp.ok) {
+        const b = scrub((await resp.text()).slice(0, 300));
+        if (missingWorkspaceColumn(b)) {
+          return cors(json({ error: 'Kolom "workspace" belum ada di tabel glosarium — jalankan SQL upgrade (GUIDE.md bagian 2.1b) dulu.' }, 502), env, origin);
+        }
+        if (/constraint matching/i.test(b)) {
+          // Fallback schema lama (unique di kolom.term)
+          ({ resp } = await supabaseReq(env, '?on_conflict=term', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+            body: JSON.stringify(rows),
+          }));
+        }
+      }
       if (!resp.ok) {
         const b = scrub((await resp.text()).slice(0, 300));
         if (/relation|column|does not exist/i.test(b)) {
@@ -1766,23 +1813,31 @@ async function handleGlossary(request, env, origin) {
         }
         return cors(json({ error: `Supabase gagal menyimpan glosarium (${resp.status}): ${b}` }, 502), env, origin);
       }
-      return cors(json({ ok: true, source: 'supabase', mode, merged: list.length }), env, origin);
+      return cors(json({ ok: true, source: 'supabase', workspace: ws, mode, merged: list.length }), env, origin);
     }
 
     if (method === 'DELETE') {
       let body = {};
       try { body = await request.json(); } catch { body = {}; }
+      const ws = glossWorkspace(body?.workspace || body?.ws || 'default');
+      if (!ws) {
+        return cors(json({ error: 'Kode ruang glosarium tidak valid: pakai 4–64 huruf/angka/underskor.' }, 400), env, origin);
+      }
+      const wsf = `workspace=eq.${encodeURIComponent(ws)}`;
       let filter = '';
-      if (body?.all === true) filter = '?term=not.is.null';
-      else if (body?.term != null && String(body.term).trim()) filter = `?term=eq.${encodeURIComponent(String(body.term).trim().slice(0, 120))}`;
-      else if (body?.id != null && (Number.isInteger(body.id) || /^\d+$/.test(String(body.id)))) filter = `?id=eq.${Number(body.id)}`;
+      if (body?.all === true) filter = `?${wsf}`;
+      else if (body?.term != null && String(body.term).trim()) filter = `?${wsf}&term=eq.${encodeURIComponent(String(body.term).trim().slice(0, 120))}`;
+      else if (body?.id != null && (Number.isInteger(body.id) || /^\d+$/.test(String(body.id)))) filter = `?${wsf}&id=eq.${Number(body.id)}`;
       else return cors(json({ error: 'DELETE butuh target: {term}, {id}, atau {all:true}.' }, 400), env, origin);
       const { resp } = await supabaseReq(env, filter, { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
       if (!resp.ok) {
         const b = scrub((await resp.text()).slice(0, 300));
+        if (missingWorkspaceColumn(b)) {
+          return cors(json({ error: 'Kolom "workspace" belum ada di tabel glosarium — jalankan SQL upgrade (GUIDE.md bagian 2.1b) dulu.' }, 502), env, origin);
+        }
         return cors(json({ error: `Supabase gagal menghapus (${resp.status}): ${b}` }, 502), env, origin);
       }
-      return cors(json({ ok: true, source: 'supabase' }), env, origin);
+      return cors(json({ ok: true, source: 'supabase', workspace: ws }), env, origin);
     }
 
     return cors(json({ error: 'Metode tidak didukung.' }, 405), env, origin);

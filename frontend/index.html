@@ -154,7 +154,7 @@ button:focus:not(:focus-visible){outline:none}
 /* ---------- modal ---------- */
 .overlay{position:fixed;inset:0;background:var(--overlay);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:none;justify-content:center;align-items:center;z-index:1000;padding:20px}
 .overlay.active{display:flex}
-.modal{background:var(--surface);border-radius:18px;padding:24px;width:100%;max-width:440px;max-height:88dvh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);animation:rise .18s ease-out}
+.modal{background:var(--surface);border-radius:18px;padding:24px;width:100%;max-width:440px;max-height:88vh;max-height:88dvh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);animation:rise .18s ease-out}
 .modal h3{font-size:17px;font-weight:650;letter-spacing:-.01em;margin-bottom:4px}
 .modal .sub{font-size:13px;color:var(--ink-2);margin-bottom:18px;line-height:1.5}
 .modal .message{font-size:14px;color:var(--ink-2);line-height:1.6;white-space:pre-wrap;margin:8px 0 4px}
@@ -173,7 +173,7 @@ button:focus:not(:focus-visible){outline:none}
 .sheet .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;flex-wrap:wrap}
 .sheet .modal-actions .btn{height:38px;padding:0 16px;border-radius:12px;font-size:13px}
 .sheet .modal-actions .btn.primary{flex:1 1 180px;justify-content:center;font-weight:600}
-.sheet .p-content{flex:1 1 auto;min-height:0;overflow-y:auto}
+.sheet .p-content{flex:none;min-height:0;overflow:visible}
 .sheet .field label{font-size:12px;font-weight:500;margin-bottom:6px}
 .sheet .field input,.sheet .field select{width:100%;height:40px;padding:0 12px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface-2);color:var(--ink);font-size:13px}
 .sheet .field input:focus,.sheet .field select:focus{outline:2px solid var(--accent);outline-offset:1px}
@@ -221,6 +221,9 @@ button:focus:not(:focus-visible){outline:none}
 .p-test-status{margin-top:10px;font-size:12px;line-height:1.5;color:var(--ink-2)}
 .p-test-status.p-test-ok{color:var(--accent)}
 .p-test-status.p-test-err{color:var(--danger)}
+.p-testrow{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px dashed var(--line-strong)}
+.p-testrow .p-test{height:34px}
+.p-testrow .p-test-status{margin-top:0;flex:1 1 120px;min-width:0}
 /* tab penyedia di modal Pengaturan */
 .p-tabs{display:flex;gap:4px;margin-bottom:16px;padding:4px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px}
 .p-tab{flex:1 1 0;min-width:0;height:34px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--ink-2);font-size:12.5px;font-weight:600;cursor:pointer;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .15s,color .15s}
@@ -252,11 +255,9 @@ button:focus:not(:focus-visible){outline:none}
   .modal{padding:20px}
   .p-tab{font-size:11.5px;padding:0 4px}
   .tab{font-size:12px;height:30px;border-radius:8px}
-  .sheet{padding:14px}
 }
 @media(max-width:400px){
   .tabbar{padding:5px 6px;gap:3px}
-  .sheet{padding:14px}
   .sheet .modal-actions{gap:8px}
   .sheet .modal-actions .btn{height:38px;padding:0 14px;font-size:12px;border-radius:11px}
   .sheet .modal-actions .btn.primary{height:38px;font-size:12px}
@@ -308,8 +309,8 @@ button:focus:not(:focus-visible){outline:none}
 }
 
 /* ---------- glosarium ---------- */
-.gl-list{max-height:320px;overflow-y:auto}.glSheet .gl-list{max-height:none;overflow:visible}
-.glSheet .empty-note{margin:0 0 8px;font-size:12.5px}
+.gl-list{max-height:320px;overflow-y:auto}#glSheet .gl-list{max-height:none;overflow:visible}
+#glSheet .empty-note{margin:0 0 8px;font-size:12.5px}
 .gl-row{display:flex;align-items:flex-start;gap:8px;padding:8px 2px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.5;flex-wrap:wrap}
 .gl-row:first-child{border-top:none}
 .gl-term{font-family:var(--mono);font-weight:650;font-size:12px;word-break:break-word}
@@ -329,12 +330,15 @@ button:focus:not(:focus-visible){outline:none}
 .p-loadrow input:focus{outline:2px solid var(--accent);outline-offset:1px}
 
 /* ---------- bottom sheet (Glosarium & Pengaturan) ---------- */
-.sheet{position:fixed;left:50%;bottom:0;transform:translate(-50%,100%);width:min(100%,480px);max-height:88dvh;background:var(--surface);border:1px solid var(--line-strong);border-bottom:none;border-radius:18px 18px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.35);z-index:1200;display:none;flex-direction:column;transition:transform .24s ease;overflow-y:auto}
+.sheet{position:fixed;left:50%;bottom:0;transform:translate(-50%,100%);width:min(100%,480px);max-height:88vh;max-height:88dvh;background:var(--surface);border:1px solid var(--line-strong);border-bottom:none;border-radius:18px 18px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.35);z-index:1200;display:none;flex-direction:column;transition:transform .24s ease;overflow:hidden}
 .sheet.open{display:flex;transform:translate(-50%,0)}
-.sheet-head{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--line)}
-.sheet-head h3{font-size:14px;font-weight:650;margin:0}
-.sheet-close{width:32px;height:32px;display:grid;place-items:center;border:none;background:transparent;color:var(--ink-2);cursor:pointer;font-size:18px;border-radius:8px}
-.sheet-close:hover{background:var(--surface-2);color:var(--ink)}
+body.sheet-open{overflow:hidden}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px 10px 14px;background:var(--surface);border-bottom:1px solid var(--line);flex:none}
+.sheet-head h3{font-size:15px;font-weight:700;margin:0;min-width:0}
+.sheet-close{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px 0 11px;border:1px solid var(--line-strong);background:var(--surface-2);color:var(--ink);cursor:pointer;font-size:13px;font-weight:600;border-radius:12px;flex:none}
+.sheet-close .p-ico{font-size:16px}
+.sheet-close:hover{border-color:var(--accent);color:var(--accent)}
+.sheet-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:env(safe-area-inset-bottom)}
 .sheet .card{margin:0 14px 14px}
 .sheet-mask{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);z-index:1100;opacity:0;pointer-events:none;transition:opacity .2s}
 .sheet-mask.open{opacity:1;pointer-events:auto}
@@ -483,9 +487,21 @@ button:focus:not(:focus-visible){outline:none}
   <section class="sheet" id="glSheet" aria-label="Glosarium">
     <div class="sheet-head">
       <h3>Glosarium <span class="badge" id="glBadge">…</span></h3>
-      <button class="sheet-close" type="button" data-close="glSheet" aria-label="Tutup"><span class="p-ico">close</span></button>
+      <button class="sheet-close" type="button" data-close="glSheet" aria-label="Tutup"><span class="p-ico">close</span><span>Tutup</span></button>
     </div>
-    <div class="card">
+    <div class="sheet-body">
+      <div class="card">
+        <p class="p-strong" style="margin:0 0 4px">Ruang &amp; Supabase (opsional)</p>
+        <p class="empty-note">Daftar istilah selalu tersimpan di browser ini — tanpa Supabase tetap jalan. Supabase dipakai HANYA saat tombol kirim/ambil ditekan (tidak otomatis). Beda kode ruang = glosarium terpisah, jadi tiap user punya daftarnya sendiri.</p>
+        <div class="gl-form" style="margin:8px 0 6px">
+          <input class="gl-input" id="glWsInput" type="text" spellcheck="false" placeholder="kode ruang, mis. manga-rq17" aria-label="Kode ruang Supabase" style="flex:2 1 140px" />
+          <button class="btn xs" id="glNewWs" type="button">Kode baru</button>
+          <button class="btn primary xs" id="glSendWs" type="button">Kirim ke Supabase</button>
+          <button class="btn xs" id="glPullWs" type="button">Ambil</button>
+        </div>
+        <div class="p-test-status" id="glWsStatus" role="status" hidden></div>
+      </div>
+      <div class="card">
       <p class="empty-note">Istilah yang WAJIB dipakai konsisten oleh Terjemahan &amp; Editor TL.</p>
       <input class="gl-input" id="glSearch" type="search" placeholder="Cari istilah…" aria-label="Cari istilah glosarium" style="width:100%;margin-bottom:8px" />
       <div class="gl-form" style="margin-bottom:8px">
@@ -507,8 +523,8 @@ button:focus:not(:focus-visible){outline:none}
         <input type="file" id="glFile" accept=".json,.csv,text/plain,application/json,text/csv" hidden />
         <button class="btn" id="glExportJson" type="button">Ekspor JSON</button>
         <button class="btn" id="glExportCsv" type="button">Ekspor CSV</button>
-        <button class="btn" id="glReload" type="button">Muat ulang</button>
         <button class="btn danger" id="glClear" type="button">Kosongkan</button>
+      </div>
       </div>
     </div>
   </section>
@@ -516,24 +532,21 @@ button:focus:not(:focus-visible){outline:none}
   <section class="sheet" id="setSheet" aria-label="Pengaturan">
     <div class="sheet-head">
       <h3>Pengaturan</h3>
-      <button class="sheet-close" type="button" data-close="setSheet" aria-label="Tutup"><span class="p-ico">close</span></button>
+      <button class="sheet-close" type="button" data-close="setSheet" aria-label="Tutup"><span class="p-ico">close</span><span>Tutup</span></button>
     </div>
+    <div class="sheet-body">
     <div class="card">
       <div class="p-head">
         <div class="p-head-top">
           <span class="p-lock"><span class="p-ico">lock</span><span>Penyimpanan Lokal Aman</span></span>
-          <div class="p-head-actions">
-            <button class="p-test" id="testKeyBtn" type="button">Tes Koneksi</button>
-          </div>
         </div>
         <div class="p-title-row">
-          <span class="p-badge"><i class="p-dot"></i>Auto Key Rotation</span>
+          <span class="p-badge"><i class="p-dot"></i>Fallback kuota otomatis</span>
         </div>
         <div class="p-callout">
           <span class="p-ico">info</span>
-          <p>Key milikmu disimpan <span class="p-strong">hanya di browser ini</span>. Kolom key bisa berisi: <code>k1,k2,k3</code> — jika kena limit (429/401), otomatis lanjut ke key berikutnya.</p>
+          <p>Key milikmu disimpan <span class="p-strong">hanya di browser ini</span>. Kolom key bisa berisi: <code>k1,k2,k3</code> — jika kena limit (429/401), otomatis lanjut ke key berikutnya. Gunakan tombol <span class="p-strong">Tes koneksi</span> di tiap provider untuk memastikannya bekerja.</p>
         </div>
-        <div class="p-test-status" id="testKeyStatus" role="status"></div>
       </div>
 
       <div class="p-tabs" role="tablist" aria-label="Penyedia AI">
@@ -561,6 +574,10 @@ button:focus:not(:focus-visible){outline:none}
             <span class="p-ico">verified_user</span>
             <p>Tanpa key: Worker memakai key owner. Dengan key: kuota Gemini-mu sendiri — model boleh apa pun.</p>
           </div>
+          <div class="p-testrow">
+            <button class="p-test" id="testGeminiBtn" type="button"><span class="p-ico">network_check</span>Tes koneksi Gemini</button>
+            <span class="p-test-status" id="testGeminiStatus" role="status"></span>
+          </div>
         </div>
 
         <div class="p-pane" id="pane-agnes" data-pane="agnes" role="tabpanel" aria-labelledby="pt-agnes">
@@ -579,6 +596,10 @@ button:focus:not(:focus-visible){outline:none}
             <span class="p-ico">table_chart</span>
             <p>Model khusus optimasi dokumen &amp; tabel terstruktur untuk OCR tingkat lanjut.</p>
           </div>
+          <div class="p-testrow">
+            <button class="p-test" id="testAgnesBtn" type="button"><span class="p-ico">network_check</span>Tes koneksi Agnes</button>
+            <span class="p-test-status" id="testAgnesStatus" role="status"></span>
+          </div>
         </div>
 
         <div class="p-pane" id="pane-cloudflare" data-pane="cloudflare" role="tabpanel" aria-labelledby="pt-cloudflare">
@@ -592,6 +613,10 @@ button:focus:not(:focus-visible){outline:none}
           <div class="p-tip">
             <span class="p-ico">cloud_done</span>
             <p>Lewat binding <code>[ai]</code> Worker — tanpa API key sama sekali. Bila model utama gagal, model lain dicoba otomatis.</p>
+          </div>
+          <div class="p-testrow">
+            <button class="p-test" id="testCfBtn" type="button"><span class="p-ico">network_check</span>Tes Cloudflare AI</button>
+            <span class="p-test-status" id="testCfStatus" role="status"></span>
           </div>
         </div>
 
@@ -619,6 +644,10 @@ button:focus:not(:focus-visible){outline:none}
             <span class="p-ico">chat</span>
             <p>Endpoint OpenAI Sumopod (<code>https://ai.sumopod.com/v1</code>), dukung multi-key. Klaim resmi Sumopod: <span class="p-strong">teks saja</span> — Editor TL &amp; Terjemahan aman. OCR via model vision tetap bisa dicoba; bila model menolak gambar, muncul pesan jelas.</p>
           </div>
+          <div class="p-testrow">
+            <button class="p-test" id="testSumopodBtn" type="button"><span class="p-ico">network_check</span>Tes koneksi Sumopod</button>
+            <span class="p-test-status" id="testSumopodStatus" role="status"></span>
+          </div>
         </div>
 
         <div class="p-pane" id="pane-custom" data-pane="custom" role="tabpanel" aria-labelledby="pt-custom">
@@ -645,12 +674,17 @@ button:focus:not(:focus-visible){outline:none}
             <span class="p-ico">terminal</span>
             <p>Endpoint OpenAI-compatible apa pun (OpenRouter, Groq, vLLM, dsb). <span class="p-strong">Wajib https.</span></p>
           </div>
+          <div class="p-testrow">
+            <button class="p-test" id="testCustomBtn" type="button"><span class="p-ico">network_check</span>Tes koneksi Custom</button>
+            <span class="p-test-status" id="testCustomStatus" role="status"></span>
+          </div>
         </div>
       </div>
       <div class="modal-actions">
         <button class="btn" id="settingsReset" type="button">Batal</button>
         <button class="btn" id="settingsDefault" type="button">Reset</button>
         <button class="btn primary" id="settingsSave" type="button"><span class="p-ico">check_circle</span>Simpan Pengaturan</button>
+      </div>
       </div>
     </div>
   </section>
@@ -875,6 +909,7 @@ function openSheet(id){
   s.classList.add('open');
   const mask=$('sheetMask');
   if(mask){mask.classList.add('open');}
+  document.body.classList.add('sheet-open');
   modalOpen++;
 }
 function closeSheet(id){
@@ -882,7 +917,8 @@ function closeSheet(id){
   if(!s)return;
   s.classList.remove('open');
   const mask=$('sheetMask');
-  if(mask)mask.classList.remove('open');
+  if(mask && !document.querySelector('.sheet.open'))mask.classList.remove('open');
+  if(!document.querySelector('.sheet.open'))document.body.classList.remove('sheet-open');
   modalOpen=Math.max(0,modalOpen-1);
 }
 $('settingsBtn').onclick=openSettingsSheet;
@@ -900,39 +936,52 @@ document.querySelectorAll('.p-eye').forEach((b)=>b.addEventListener('click',()=>
   ic.classList.toggle('p-ico-on',!!show);
 }));
 let testSeq=0;
-function setTestStatus(m,ok){
-  const el=$('testKeyStatus');
-  if(!el)return;
-  el.textContent=m||'';el.hidden=!m;
-  el.classList.toggle('p-test-ok',!!ok);el.classList.toggle('p-test-err',!ok);
+function setTestStatus(statusEl,m,ok){
+  if(!statusEl)return;
+  statusEl.textContent=m||'';statusEl.hidden=!m;
+  statusEl.classList.toggle('p-test-ok',!!ok);statusEl.classList.toggle('p-test-err',!ok);
 }
-$('testKeyBtn').onclick=async()=>{
-  const btn=$('testKeyBtn');const id=++testSeq;
-  const base=CONFIG.WORKER_URL.replace(/\/+$/,'');
-  btn.disabled=true;btn.classList.add('p-testing');
-  setTestStatus('Menguji koneksi...',false);
-  const payload={provider:provider};
-  if(provider==='gemini')payload.apiKey=settings.geminiKey||undefined;
-  if(provider==='agnes')payload.apiKey=settings.agnesKey||undefined;
-  if(provider==='custom'){payload.apiKey=settings.customKey||undefined;payload.baseUrl=settings.customUrl||undefined;}
-  if(provider==='sumopod'){payload.apiKey=settings.sumopodKey||undefined;payload.baseUrl=settings.sumopodUrl||undefined;}
-  try{
-    const resp=await fetch(base+'/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    const data=await resp.json().catch(()=>({}));
-    if(id!==testSeq)return;
-    if(resp.ok&&data.ok){
-      setTestStatus('Terverifikasi: '+(data.detail||'Koneksi aktif.'),true);
-      btn.classList.remove('p-testing');btn.disabled=false;
-    }else{
-      setTestStatus('Gagal: '+(data.error||'Server error '+resp.status+'.'),false);
+function buildTestPayload(pl){
+  const payload={provider:pl};
+  const val=id=>($(id).value||'').trim();
+  if(pl==='gemini')payload.apiKey=val('setGeminiKey')||undefined;
+  if(pl==='agnes')payload.apiKey=val('setAgnesKey')||undefined;
+  if(pl==='custom'){payload.apiKey=val('setCustomKey')||undefined;payload.baseUrl=val('setCustomUrl')||undefined;}
+  if(pl==='sumopod'){payload.apiKey=val('setSumopodKey')||undefined;payload.baseUrl=val('setSumopodUrl')||undefined;}
+  return payload;
+}
+// Tes koneksi per-provider: tombol Tes di tiap tab memeriksa provider itu saja,
+// memakai nilai yang sedang di kolom (tidak perlu Simpan dulu).
+[['testGeminiBtn','testGeminiStatus','gemini'],
+ ['testAgnesBtn','testAgnesStatus','agnes'],
+ ['testCfBtn','testCfStatus','cloudflare'],
+ ['testSumopodBtn','testSumopodStatus','sumopod'],
+ ['testCustomBtn','testCustomStatus','custom']].forEach(([btnId,statusId,pl])=>{
+  const btn=$(btnId),statusEl=$(statusId);
+  if(!btn)return;
+  btn.onclick=async()=>{
+    const id=++testSeq;
+    const base=CONFIG.WORKER_URL.replace(/\/+$/,'');
+    btn.disabled=true;btn.classList.add('p-testing');
+    setTestStatus(statusEl,'Menguji koneksi...',false);
+    try{
+      const resp=await fetch(base+'/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(buildTestPayload(pl))});
+      const data=await resp.json().catch(()=>({}));
+      if(id!==testSeq)return;
+      if(resp.ok&&data.ok){
+        setTestStatus(statusEl,'Aktif: '+(data.detail||'Koneksi baik.'),true);
+        btn.classList.remove('p-testing');btn.disabled=false;
+      }else{
+        setTestStatus(statusEl,'Error: '+(data.error||'Server membalas '+resp.status+'.'),false);
+        btn.classList.remove('p-testing');btn.disabled=false;
+      }
+    }catch(e){
+      if(id!==testSeq)return;
+      setTestStatus(statusEl,'Error: '+(e&&e.message||'Tidak dapat menjangkau server.')+'.',false);
       btn.classList.remove('p-testing');btn.disabled=false;
     }
-  }catch(e){
-    if(id!==testSeq)return;
-    setTestStatus('Gagal: '+(e&&e.message||'Tidak dapat menjangkau server.')+'.',false);
-    btn.classList.remove('p-testing');btn.disabled=false;
-  }
-};
+  };
+});
 function doSaveSettings(){
   settings.geminiModel=$('setGemini').value;settings.agnesModel=$('setAgnes').value;settings.cfModel=$('setCf').value;
   settings.geminiKey=$('setGeminiKey').value.trim();settings.agnesKey=$('setAgnesKey').value.trim();
@@ -1628,7 +1677,7 @@ const SYNC_BASE=CONFIG.WORKER_URL.replace(/\/+$/,'');
 const TR_KINDS=['place','title','item','skill','name','other'];
 const GL_KEY='ocr_glossary_v1';
 const glBadge=$('glBadge'), glSearch=$('glSearch'), glList=$('glList'), glFile=$('glFile');
-let gloss={entries:[],source:'lokal'};
+let gloss={entries:[]};
 function glossNormal(e){
   const term=String(e?.term??e?.from??'').trim().slice(0,120);
   const translation=String(e?.translation??e?.to??'').trim().slice(0,300);
@@ -1659,8 +1708,8 @@ function glossMerge(entries){
 }
 function glRender(){
   const n=gloss.entries.length;
-  glBadge.textContent=(gloss.source==='supabase'?'Supabase':'Lokal')+' · '+n;
-  glBadge.className='badge'+(gloss.source==='supabase'?'':' warn');
+  glBadge.textContent=n+' istilah';
+  glBadge.className='badge'+(n?'':' warn');
   const q=(glSearch.value||'').trim().toLowerCase();
   glList.textContent='';
   const list=gloss.entries.filter(e=>!q||e.term.toLowerCase().includes(q)||e.translation.toLowerCase().includes(q)||e.kind.includes(q));
@@ -1678,64 +1727,72 @@ function glRender(){
     glList.appendChild(row);
   }
 }
-async function glossPull(){
-  try{
-    const resp=await fetch(SYNC_BASE+'/glossary');
-    const data=await resp.json().catch(()=>null);
-    if(data&&data.ok&&data.source==='supabase'&&Array.isArray(data.entries)){
-      gloss={entries:data.entries.map(glossNormal).filter(Boolean),source:'supabase'};
-      glossSaveCache();glRender();
-      showToast('Glosarium Supabase dimuat: '+gloss.entries.length+' entri');
-      return;
-    }
-  }catch{}
-  const cached=glossLoadCache();
-  if(gloss.entries.length!==cached.entries.length)showToast('Glosarium: mode lokal (browser)');
-  gloss=cached;glRender();
+function glSetStatus(m,ok){
+  const el=$('glWsStatus');if(!el)return;
+  el.textContent=m||'';el.hidden=!m;
+  el.classList.toggle('p-test-ok',!!ok);el.classList.toggle('p-test-err',!ok);
 }
+const GL_WS_KEY='ocr_gl_workspace';
+function glWsGet(){return ($('glWsInput').value||'').trim();}
+function glWsLoad(){try{$('glWsInput').value=localStorage.getItem(GL_WS_KEY)||'';}catch{}}
+function glWsSave(v){try{localStorage.setItem(GL_WS_KEY,v);}catch{}}
 async function glossAddMany(entries){
   const list=entries.map(glossNormal).filter(Boolean);
   if(!list.length)return false;
-  if(gloss.source==='supabase'){
-    try{
-      for(let i=0;i<list.length;i+=500){
-        const chunk=list.slice(i,i+500);
-        const resp=await fetch(SYNC_BASE+'/glossary',{method:'POST',
-          headers:{'Content-Type':'application/json'},body:JSON.stringify({entries:chunk,mode:'merge'})});
-        const data=await resp.json().catch(()=>({}));
-        if(!resp.ok||data.error){
-          if(/belum dikonfigurasi/i.test(String(data.error||''))){
-            const cached=glossLoadCache();gloss={entries:cached.entries,source:'lokal'};glossSaveCache();glRender();
-          }
-          showToast('Simpan ke Supabase gagal: '+(data.error||('Server membalas '+resp.status)));
-          return false;
-        }
-      }
-      await glossPull();
-      showToast(list.length+' istilah tersimpan ke Supabase');
-      return true;
-    }catch{showToast('Simpan ke Supabase gagal: Tidak dapat menjangkau server.');return false;}
-  }
   glossMerge(list);glossSaveCache();glRender();
-  showToast(list.length+' istilah tersimpan (lokal)');
+  showToast(list.length+' istilah tersimpan (browser ini)');
   return true;
 }
+// Sinkron Supabase: eksplisit & per-ruang. Kode ruang dipilih user —
+// kirim = MENGGANTI isi ruang di Supabase dengan daftar browser ini;
+// ambil = menggabungkan isi ruang Supabase ke daftar browser ini.
+$('glWsInput').addEventListener('change',()=>glWsSave(glWsGet()));
+$('glNewWs').onclick=()=>{
+  // kode acak glos-XXXXXXXXXX — beda kode = glosarium terpisah
+  const code='glos-'+Array.from(crypto.getRandomValues(new Uint8Array(5))).map(b=>(b%36).toString(36)).join('');
+  $('glWsInput').value=code;glWsSave(code);
+  glSetStatus('Kode ruang baru: '+code+' + salin kode ini ke perangkat lain untuk pakai glosarium yang sama.',true);
+};
+$('glSendWs').onclick=async()=>{
+  const ws=glWsGet();
+  if(!ws){glSetStatus('Isi kode ruang dulu (atau klik "Kode baru"). Jika tidak mau Supabase, daftar tetap jalan lokal.',false);return;}
+  if(!gloss.entries.length){glSetStatus('Daftar lokal masih kosong — tidak ada yang bisa dikirim.',false);return;}
+  const ok=await showConfirm(gloss.entries.length+' istilah di browser ini akan MENGGANTI seluruh isi ruang "'+ws+'" di Supabase.','Kirim ke Supabase?','Kirim');
+  if(!ok)return;
+  glSetStatus('Mengirim '+gloss.entries.length+' istilah...',true);
+  try{
+    const resp=await fetch(SYNC_BASE+'/glossary',{method:'POST',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({workspace:ws,entries:gloss.entries,mode:'replace'})});
+    const data=await resp.json().catch(()=>({}));
+    if(!resp.ok||data.error){glSetStatus('Kirim gagal: '+(data.error||('Server membalas '+resp.status)),false);return;}
+    glSetStatus('Terkirim: '+gloss.entries.length+' istilah menggantikan isi ruang "'+ws+'" (mode ganti).',true);
+  }catch{glSetStatus('Kirim gagal: Tidak dapat menjangkau server.',false);}
+};
+$('glPullWs').onclick=async()=>{
+  const ws=glWsGet();
+  if(!ws){glSetStatus('Isi kode ruang dulu (atau klik "Kode baru").',false);return;}
+  glSetStatus('Mengambil isi ruang "'+ws+'"...',true);
+  try{
+    const resp=await fetch(SYNC_BASE+'/glossary?ws='+encodeURIComponent(ws));
+    const data=await resp.json().catch(()=>null);
+    if(data&&data.ok&&data.source==='supabase'&&Array.isArray(data.entries)){
+      const incoming=data.entries.map(glossNormal).filter(Boolean);
+      if(!incoming.length){glSetStatus('Ruang "'+ws+'" masih kosong di Supabase.',true);return;}
+      const ok=await showConfirm(incoming.length+' entri dari ruang "'+ws+'" akan digabung ke daftar di browser ini (istilah sama ditimpa).','Ambil dari Supabase?','Gabung');
+      if(!ok){glSetStatus('Batal mengambil.',true);return;}
+      await glossAddMany(incoming);
+      glSetStatus('Selesai: '+(incoming.length)+' entri dari Supabase digabung ke daftar lokal.',true);
+      return;
+    }
+    glSetStatus('Supabase belum tersambung atau ruang kosong — daftar lokal tetap dipakai.'+(data&&data.error?' ('+data.error+')':''),false);
+  }catch{glSetStatus('Ambil gagal: Tidak dapat menjangkau server.',false);}
+};
 glSearch.addEventListener('input',glRender);
 glList.addEventListener('click',async e=>{
   const b=e.target.closest('button[data-term]');if(!b)return;
   const term=b.dataset.term;
-  if(gloss.source==='supabase'){
-    try{
-      const resp=await fetch(SYNC_BASE+'/glossary',{method:'DELETE',
-        headers:{'Content-Type':'application/json'},body:JSON.stringify({term})});
-      const data=await resp.json().catch(()=>({}));
-      if(!resp.ok||data.error){showToast('Hapus gagal: '+(data.error||('Server membalas '+resp.status)));return;}
-      await glossPull();
-      return;
-    }catch{showToast('Hapus gagal: Tidak dapat menjangkau server.');return;}
-  }
   gloss.entries=gloss.entries.filter(x=>x.term.toLowerCase()!==term.toLowerCase());
-  glossSaveCache();glRender();showToast('Entri dihapus');
+  glossSaveCache();glRender();showToast('Entri dihapus (browser ini)');
 });
 $('glAddBtn').onclick=()=>{
   const term=$('glNewTerm').value,translation=$('glNewTo').value,kind=$('glNewKind').value;
@@ -1758,7 +1815,6 @@ $('glExportCsv').onclick=()=>{
   gloss.entries.forEach(g=>rows.push([g.term,g.translation,g.kind,g.note]));
   glDownload('glossary.csv',rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n'),'text/csv');
 };
-$('glReload').onclick=()=>glossPull();
 function csvSplit(s){
   const rows=[];let row=[],cur='',inQ=false;
   for(let i=0;i<s.length;i++){
@@ -1821,18 +1877,8 @@ glFile.onchange=async e=>{
 $('glClear').onclick=async()=>{
   const n=gloss.entries.length;
   if(!n){showToast('Glosarium sudah kosong');return;}
-  const ok=await showConfirm(n+' entri glosarium '+(gloss.source==='supabase'?'di Supabase':'di browser ini')+' akan dihapus permanen.','Kosongkan glosarium?','Kosongkan');
+  const ok=await showConfirm(n+' entri glosarium di browser ini akan dihapus permanen. Isi di ruang Supabase tidak terpengaruh.','Kosongkan glosarium?','Kosongkan');
   if(!ok)return;
-  if(gloss.source==='supabase'){
-    try{
-      const resp=await fetch(SYNC_BASE+'/glossary',{method:'DELETE',
-        headers:{'Content-Type':'application/json'},body:JSON.stringify({all:true})});
-      const data=await resp.json().catch(()=>({}));
-      if(!resp.ok||data.error){showToast('Kosongkan gagal: '+(data.error||('Server membalas '+resp.status)));return;}
-      gloss={entries:[],source:'supabase'};glossSaveCache();glRender();showToast('Glosarium Supabase dikosongkan');
-      return;
-    }catch{showToast('Kosongkan gagal: Tidak dapat menjangkau server.');return;}
-  }
   gloss.entries=[];glossSaveCache();glRender();showToast('Glosarium dikosongkan');
 };
 
@@ -2058,7 +2104,7 @@ trUpdateStats();trSyncButtons();trSaveSuggest();
 
 refreshHome();resetFile();setBusyUI(false);
 loadHist().slice().reverse().forEach(renderRestored);
-glossPull();
+gloss=glossLoadCache();glWsLoad();glRender();
 })();
 </script>
 </body>

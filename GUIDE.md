@@ -16,14 +16,17 @@ Sumopod layanan AI Indonesia yang kompatibel API OpenAI: base URL-nya
 2. Salin key-nya (hanya muncul sekali).
 
 ### Pasang di OCR Studio
-1. Buka situs → ikon **⚙ Pengaturan** → tab **Sumopod**.
+1. Buka situs → ikon **Pengaturan** (bar atas, ikon slider) → tab **Sumopod**.
 2. **Base URL**: biarkan default `https://ai.sumopod.com/v1` (bisa diubah bila endpoint berpindah).
 3. Klik **Muat model** → tunggu toast "N model dimuat" → klik kolom *Model* dan pilih model
    dari daftar (daftar diambil langsung dari server Sumopod, jadi selalu terkini).
 4. **API key**: tempel key. Bisa diisi banyak sekaligus dipisah koma: `k1,k2,k3` —
    kalau satu key kena limit (429) atau ditolak (401/403), otomatis lanjut ke key berikutnya.
-5. Klik **Simpan** lalu **Tes Koneksi** (di pojok kiri atas modal). Harus muncul
-   *"Sumopod key valid — N model tersedia"*.
+5. Klik **Simpan**. Lalu di tab Sumopod klik **Tes koneksi Sumopod** — harus muncul
+   *"Sumopod key valid"*. Tiap provider (Gemini, Agnes, Cloudflare, Sumopod, Custom)
+   punya tombol Tes + status sendiri di tabnya masing-masing; yang dites adalah nilai
+   yang sedang di kolom, jadi tidak wajib Simpan dulu. Tab **Cloudflare** khusus
+   menguji binding AI Worker.
 6. (Opsional, cara owner) Set di Worker saja supaya berlaku untuk semua pengguna:
 
 | Secret/Env di Worker | Isi |
@@ -44,11 +47,19 @@ yang gagal akan muncul pesan jelas *"Model Sumopod … menolak input gambar"*.
 ## 2. Glosarium di Supabase
 
 Glosarium menyimpan padanan istilah (nama tempat, gelar/julukan, item, skill, nama tokoh
-dll.) supaya terjemahan konsisten dari awal sampai akhir chapter. Mode penyimpanan:
+dll.) supaya terjemahan konsisten dari awal sampai akhir chapter.
 
-- **Supabase** (disarankan — tersinkron antar perangkat/browser), atau
-- **Lokal (browser)** — otomatis dipakai bila Supabase belum dikonfigurasi.
-  Badge di kartu Glosarium menuntunmu: `Supabase · N` atau kuning `Lokal · N`.
+Prinsipnya sekarang:
+
+- **Daftar istilah selalu tersimpan di browser** (localStorage) — tanpa Supabase glosarium
+  tetap berfungsi penuh: menambah, mencari, impor/ekspor, dan dipakai Terjemahan.
+- **Supabase itu opsional & manual**: dipakai hanya saat kamu menekan tombol
+  **Kirim ke Supabase** atau **Ambil** — tidak ada sinkron otomatis. Kalau tidak mau
+  berurusan dengan Supabase sama sekali, glosarium tetap jalan.
+- **Kode ruang = milikmu**: daftar yang dikirim/diambil punya identitas kode ruang
+  (mis. `glos-7kfj2`). Beda kode ruang = beda glosarium, jadi tiap user punya daftarnya
+  sendiri dan tidak saling menimpa. Salin kode ruang yang sama ke perangkat lain
+  untuk memakai glosarium yang sama.
 
 ### 2.1 Buat proyek Supabase (sekali saja)
 1. Buka **https://supabase.com** → **Start your project** → daftar/login.
@@ -59,17 +70,28 @@ dll.) supaya terjemahan konsisten dari awal sampai akhir chapter. Mode penyimpan
 ```sql
 create table if not exists glossary (
   id bigserial primary key,
-  term text unique not null,
+  workspace text not null default 'default',
+  term text not null,
   translation text not null,
   kind text not null default 'other',
   note text not null default '',
   created_at timestamptz not null default now()
 );
+create unique index if not exists glossary_ws_term on glossary(workspace, term);
 ```
 
-   Bila hasilnya *Success*, tabel sudah jadi. Tidak perlu mengatur RLS khusus:
-   kita memakai **service key** yang mengakses tabel tanpa terkena RLS, dan Worker
-   tidak pernah mengekspos key itu ke browser.
+**2.1b Upgrade untuk tabel yang SUDAH dibuat dulu** (kalau kamu sudah sempat menjalankan
+SQL versi lama — kolom `workspace` belum ada):
+
+```sql
+alter table glossary add column if not exists workspace text not null default 'default';
+alter table glossary drop constraint if exists glossary_term_key;
+create unique index if not exists glossary_ws_term on glossary(workspace, term);
+```
+
+Bila hasilnya *Success*, tabel sudah jadi. Tidak perlu mengatur RLS khusus:
+kita memakai **service key** yang mengakses tabel tanpa terkena RLS, dan Worker
+tidak pernah mengekspos key itu ke browser.
 
 4. Ambil kredensial Supabase (sesuai dashboard 2026):
    - **Project URL**: klik tombol **Connect** (tengah atas halaman dashboard) → tampil
@@ -95,18 +117,26 @@ Workers & Pages → **ocr-worker** → Settings → **Variables and Secrets** �
 | Secret | `SUPABASE_SERVICE_KEY` | `sb_secret_...` (atau key `service_role` legacy — keduanya diterima) |
 | Text (ops.) | `SUPABASE_TABLE` | default `glossary` (biarkan bila pakai SQL di atas) |
 
-Lalu **Retry deployment** Worker agar env aktif. Uji: buka situs → tab **Glosarium** →
-kartu **Glosarium** → **Muat ulang** → badge berubah jadi `Supabase · 0`.
+Lalu **Retry deployment** Worker agar env aktif.
+
+Uji: buka situs → ikon glosarium di bar atas → kartu **Ruang & Supabase (opsional)** →
+isi kode ruang (klik **Kode baru** untuk membuat acak) → tekan **Ambil**. Hasilnya
+(status sukses/gagal + jumlah entri) tampil persis di bawah tombol-tombol itu.
 
 ### 2.3 Pakai glosarium di aplikasi
 - **Tambah manual**: kolom *istilah / terjemahan / jenis* (place, title, item, skill,
-  name, other) → **Tambah**.
+  name, other) → **Tambah**. Tersimpan di browser.
 - **Hapus satu**: tombol **Hapus** di barisnya. **Kosongkan semua**: tombol
-  **Kosongkan** (diminta konfirmasi).
+  **Kosongkan** (diminta konfirmasi; hanya menghapus di browser, isi Di Supabase
+  tidak tersentuh).
 - **Cari**: kolom pencarian menyaring istilah/terjemahan/jenis.
 - **Dari hasil terjemahan**: setelah menerjemahkan, istilah baru muncul di kartu
   **Glosarium baru** — centang yang mau disimpan (boleh utak-atik terjemahannya sebelum
-  disimpan) → **Simpan ke Glosarium**.
+  disimpan) → **Simpan ke Glosarium** (masuk daftar browser).
+- **Kirim ke Supabase**: seluruh daftar browser MENGGANTI isi ruang kode itu di Supabase
+  (diminta konfirmasi dulu).
+- **Ambil**: isi ruang kode itu digabung ke daftar browser (istilah sama ditimpa,
+  diminta konfirmasi dulu). Arah sync dua-duanya selalu manual — tidak ada yang otomatis.
 
 ### 2.4 Impor & Ekspor glosarium
 
@@ -114,7 +144,8 @@ Tombolnya ada di sheet **Glosarium**: **Impor JSON/CSV**, **Ekspor JSON**, **Eks
 
 **Apa itu?**
 Bakal berguna kalau kamu ingin:
-- Menyalin daftar istilah antar perangkat (Supabase sinkron otomatis, ini untuk transfer manual).
+- Menyalin daftar istilah antar perangkat (sorot: kirim/ambil via kode ruang lebih
+  praktis; ini untuk transfer manual).
 - Mengolah pakai spreadsheet (Excel / Google Sheets) lalu mengimpor balik.
 
 **Ekspor CSV** — menghasilkan file `.csv` dengan 4 kolom:
@@ -165,20 +196,25 @@ atau klik **Pilih file .txt** (maks 2 MB; file dipecah di penanda halaman `P1`, 
    dipertahankan persis sehingga file hasil siap diteruskan ke Editor TL.
 4. **Kartu "Glosarium baru"**: istilah baru yang AI putuskan (tempat, gelar, item, skill)
    tampil dengan kotak centang; perbaiki kalimatnya bila perlu → **Simpan ke Glosarium**.
-5. **Kartu "Perlu dicek ⚠️"**: baris ambigu, baris yang terjemahannya dibatalkan
+5. **Kartu "Perlu dicek"**: baris ambigu, baris yang terjemahannya dibatalkan
    (penanda berubah), angka yang ikut berubah, atau baris yang model buang.
 
-Kelola glosarium (tambah/hapus cari/impor-ekspor/sinkron Supabase) di tab **Glosarium**
-sendiri — di tab Terjemahan kartu Glosarium TIDAK lagi ada; ada saja kartu **"Glosarium
-baru"** yang muncul setelah menjalankan Terjemahkan.
+Kelola glosarium (tambah/hapus/cari/impor-ekspor/kirim-ambil Supabase) lewat **ikon
+daftar di bar atas** (buka sheet Glosarium); Pengaturan juga lewat **ikon di bar atas**.
+Di tab Terjemahan cukup ada kartu **"Glosarium baru"** yang muncul setelah menjalankan
+Terjemahkan.
 
 ### Aturan yang berlaku pada penerjemahan
 - **Register formal vs kasual** dipisah: dialog sopan → bahasa Indonesia formal
   (`saya`/`Anda`); dialog teman → kasual (`aku`/`kamu`, boleh `gue/lo` bila nada
   sumbernya sangat kasual); konsistensi register dijaga per karakter sepanjang bagian.
-- **Tetap bahasa Inggris**: nama tokoh, nama tempat, gelar/julukan unik, nama item
-  (paket senjata/armor/barang), nama skill/teknik/jurus. Kata baku biasa tetap
-  diterjemahkan (king → raja, sword → pedang).
+- **Sumber yang didukung**: EN, CH (Han/Sinitik), KR, JP — hasil selalu Bahasa Indonesia.
+- **Istilah khusus tetap pakai ejaan aslinya**: nama tokoh, nama tempat, gelar/julukan
+  unik, nama item, nama skill/teknik/jurus. Contoh: 북한산 tetap 북한산 (bukan
+  "bukhansan"), 魔剣グングニル tetap 魔剣グングニル (bukan "maken gungnir").
+  Kata baku biasa tetap diterjemahkan (king → raja, sword → pedang).
+- **Romanisasi hanya untuk EN**: hanya teks bahasa Inggris yang ditulis Latin apa
+  adanya; istilah CH/KR/JP tidak pernah diromanisasi ke Latin oleh model.
 - **Angka, durasi, biaya, stat** dipertahankan; kalau berubah, barisnya TIDAK dipakai
   dan pindah ke *Perlu dicek*.
 - **SFX**: diterjemahkan ke onomatope Indonesia bila jelas (`knock` → `duk`,
@@ -197,7 +233,7 @@ baru"** yang muncul setelah menjalankan Terjemahkan.
 Tab **Pengaturan → Custom** kini punya tombol **Muat model**: daftar model diambil dari
 `{Base URL}/models` endpoint milikmu (OpenRouter, vLLM, dll.), ditampilkan sebagai
 sugesti di kolom Model — tinggal klik salah satu, tak perlu menulis manual.
-Tes Koneksi di tab Custom juga tetap berfungsi seperti biasa.
+Tes koneksi Custom ada tombolnya sendiri di tab Custom (tiap provider punya Tes + status sendiri).
 
 ---
 
@@ -223,10 +259,11 @@ Tes Koneksi di tab Custom juga tetap berfungsi seperti biasa.
 
 | Gejala | Penyebab & solusi |
 |---|---|
-| Badge glosarium tetap `Lokal` padahal sudah isi Supabase | `SUPABASE_URL`/`SUPABASE_SERVICE_KEY` salah atau belum Retry deployment Worker. Cek juga SQL tabel sudah di-Run. |
+| Klik **Ambil/Kirim** muncul "Kolom workspace belum ada" | SQL upgrade 2.1b belum dijalankan — tempel alter table dari bagian 2.1b lalu **Run**. |
+| Ambil selalu "ruang kosong" padahal sudah kirim | Kode ruang beda antara perangkat (cek ejaan kode di kolom Ruang) atau kirim sebelumnya ke ruang lain. |
 | "Supabase tabel \"glossary\" belum ada" | SQL tabel belum dijalankan — lihat bagian 2.1 langkah 3. |
 | Supabase 401/403 / key tidak dipakai | Key salah (mis. publishable/anon yang harus diganti ke secret), key ada spasi/baris baru, atau tabel `glossary` belum dibuat (lihat bagian 2.1). Secret key `sb_secret_...` hanya boleh dipakai dari Worker — kalau dipakai browser, Supabase langsung menolak (401). |
 | "Muat model" gagal di Sumopod | Base URL salah / key kosong. Periksa base URL `https://ai.sumopod.com/v1` + isi key. |
 | OCR via Sumopod: "menolak input gambar" | Bukti model Sumopod itu teks saja. Pindah provider OCR ke Gemini/Agnes/Cloudflare. |
 | "Tidak ada terjemahan dari model untuk baris ini" | Bagian itu gagal (timeout/limit) — bagian asli dipertahankan; klik **Lanjutkan** atau jalankan ulang. |
-| Glosarium gagal tersimpan ke Supabase saat offline | Aplikasi otomatis jatuh ke penyimpanan browser (badge berubah `Lokal`) — sinkronkan lagi dengan **Muat ulang** setelah koneksi pulih. |
+| Glosarium gagal sync ke Supabase saat offline | Sync manual selalu bisa diulang setelah koneksi pulih — daftar browser tidak pernah hilang karena Supabase. |

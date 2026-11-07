@@ -61,5 +61,5 @@ ocr-studio/
   angka, tanda baca penutup (... ? !), nomor halaman, atau catatan TL/TN otomatis ditolak
   dan dipindah ke "Perlu dicek".
 - Nomor baris di laporan "Perubahan" adalah nomor baris di file asli (mulai dari 1).
-- **Terjemahan (tab Terjemahan)**: input seperti Editor TL; model menerjemahkan EN→ID dengan register formal/informal, istilah khusus tetap bahasa Inggris, prefix OCR & halaman & baris Notes dipertahankan utuh, angka berubah → masuk "Perlu dicek". Endpoint `/translate` di Worker.
+- **Terjemahan (tab Terjemahan)**: input seperti Editor TL; sumber EN/CH/KR/JP → Bahasa Indonesia dengan register formal/informal, **romanisasi hanya untuk teks EN** (istilah CH/KR/JP tetap ejaan aslinya, kecuali user menetapkan lewat Glosarium), prefix OCR & halaman & baris Notes dipertahankan utuh, angka berubah → masuk "Perlu dicek". Endpoint `/translate` di Worker.
 - **Glosarium**: tersimpan di Supabase (`SUPABASE_URL` + `SUPABASE_SERVICE_KEY`; SQL setup di GUIDE.md), fallback otomatis ke penyimpanan browser bila belum dikonfigurasi. Mendukung tambah/hapus/cari, simpan istilah hasil terjemahan, impor/ekspor JSON & CSV. Di aplikasi, kini ada tab **Glosarium** khusus; kartu "Glosarium baru" khusus (dari hasil Terjemahan) tetap muncul di tab Terjemahan setelah menjalankan **Terjemahkan**.
