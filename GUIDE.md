@@ -108,22 +108,46 @@ kartu **Glosarium** → **Muat ulang** → badge berubah jadi `Supabase · 0`.
   **Glosarium baru** — centang yang mau disimpan (boleh utak-atik terjemahannya sebelum
   disimpan) → **Simpan ke Glosarium**.
 
-### 2.4 Impor & Ekspor
-- **Ekspor JSON**: `{"entries":[{"term":"Iron Haven","translation":"Iron Haven","kind":"place","note":"ibu kota"}]}`.
-- **Ekspor CSV**: kepala kolom wajib `term,translation,kind,note`, contoh:
+### 2.4 Impor & Ekspor glosarium
 
-```csv
+Tombolnya ada di sheet **Glosarium**: **Impor JSON/CSV**, **Ekspor JSON**, **Ekspor CSV**.
+
+**Apa itu?**
+Bakal berguna kalau kamu ingin:
+- Menyalin daftar istilah antar perangkat (Supabase sinkron otomatis, ini untuk transfer manual).
+- Mengolah pakai spreadsheet (Excel / Google Sheets) lalu mengimpor balik.
+
+**Ekspor CSV** — menghasilkan file `.csv` dengan 4 kolom:
+```
 term,translation,kind,note
-"Iron Haven","Iron Haven","place","ibu kota kerajaan"
-"Bladestorm","Bladestorm","skill","jurus pedang sang tokoh"
+Iron Haven,Iron Haven,place,ibu kota kerajaan
+Bladestorm,Bladestorm,skill,jurus pedang
+```
+- `term` = istilah aslinya (EN / CJK / KR / JP apa saja).
+- `translation` = terjemahannya.
+- `kind` = salah satu: `place`, `title`, `item`, `skill`, `name`, `other`.
+- `note` = keterangan bebas (boleh kosong).
+
+**Ekspor JSON** — format yang sama tapi berupa file `.json`:
+```json
+{
+  "entries": [
+    { "term": "Iron Haven", "translation": "Iron Haven", "kind": "place", "note": "ibu kota kerajaan" },
+    { "term": "Bladestorm", "translation": "Bladestorm", "kind": "skill", "note": "jurus pedang" }
+  ]
+}
 ```
 
-- **Impor** menerima keduanya (tombol **Impor JSON/CSV**): beralih otomatis dari isi file,
-  kepala CSV wajib memuat `term`/`from` dan `translation`/`to`. **Mode merge** — entri
-  dengan istilah yang sama ditimpa, yang baru ditambah (tidak menghapus yang lain).
-  Maks 500 entri per ukuran file/dorongan — sisanya dipecah otomatis.
-- File besar dari Google Sheets: **File → Download → .csv** langsung bisa diimpor
-  (pastikan kolomnya `term,translation,kind,note` atau `from,to,kind,note`).
+**Impor** (tombol **Impor JSON/CSV**):
+- Menerima file `.csv` (4 kolom di atas) atau `.json` (objek `{"entries": [...]}` atau array langsung).
+- **Mode merge**: istilah yang sama → ditimpa terjemahannya, istilah baru → ditambah. Tidak menghapus entri lain.
+- Maksimal 500 entri per kali impor — kalau lebih, aplikasi memecah otomatis (sisa diimpor juga, hanya butuh waktu lebih).
+- Dari Google Sheets: **File → Unduh → .csv** → langsung diimpor, asalkan kolomnya `term,translation,kind,note` (atau `from,to,kind,note` — kedua nama ini dikenali).
+
+**Cara pakai praktis:**
+1. Klik **Ekspor CSV** → file diunduh.
+2. Buka di Excel/Sheets → edit / tambah baris.
+3. Simpan / unduh lagi → di sheet Glosarium, klik **Impor JSON/CSV** → pilih file → entri ter-merge.
 
 ---
 
