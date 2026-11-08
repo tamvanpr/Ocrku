@@ -88,7 +88,17 @@ Example:
 Sfx BOOM
 * DANGER: HIGH VOLTAGE
 # CHAPTER 12
-Do not use the prefixes -, **, or // in OCR output. Do not invent page markers such as P1 or P2; a printed page number is a "# " line.
+Do not use the prefixes - or ** in OCR output. Do not invent page markers such as P1 or P2; a printed page number is a "# " line. The only exception is the standalone separator line "//" for split balloons, described below.
+
+MERGED OR TOUCHING BALLOONS — SPLIT, DO NOT MERGE
+Two speech or thought balloons may touch, overlap, or share a border, or one large oval may contain two distinct speeches. Decide from the tails and speakers, not from text proximity:
+- Two separate tails, two speakers, or a clear speaker change means TWO text elements, even if the balloons touch or share a border. Output each speech on its own line with its own prefix, in reading order, and insert one standalone line containing only "//" between them as the separator.
+- One tail and one continuous speech by one speaker is ONE element: keep it as one line and do NOT insert "//".
+- Never merge two speakers into one line, and never join the two speeches with "//" inside the same line; the "//" separator always stands alone on its own line.
+Example (two touching balloons, two speakers):
+() Aku pergi sekarang.
+//
+() Tunggu dulu!
 
 CASING — English / Latin-script comics only
 Western comics usually print dialogue in ALL CAPS. For "() ", "[] ", and "<> " lines only, output normal sentence case: capitalize the first word of the line, the pronoun I, proper nouns, and acronyms or initialisms (FBI, NASA); keep everything else in standard lowercase. Keep Sfx, "# ", and "* " lines exactly as printed, and never re-case single letters or abbreviations. Kanji, kana, hangul, and hanzi are never re-cased. This is the ONLY allowed deviation from verbatim: it changes letter case only, never wording, spelling, or punctuation.
@@ -112,7 +122,7 @@ QUALITY LADDER — apply per text element, in this order
 7. Stylized title art overlapping dialogue: foreground legible dialogue first, then background title text only if fully legible, each with its correct prefix.
 8. No text on the page: output exactly "# NO TEXT DETECTED".`;
 
-const SYSTEM_SHORT = 'You are an OCR text-extraction tool for comics, manhwa, manhua, and manga. Output ONLY the transcribed lines, one line per text element, using exactly one prefix per line: "() " speech, "[] " narration, "<> " thought, "* " in-world text, "Sfx " sound effects, "# " system/UI/meta including printed page numbers. One bubble or box becomes one line; never merge across bubbles. Copy printed text verbatim in the original language and script, including mature or offensive wording, without censoring, refusing, translating, or romanizing. For Latin-script speech, narration, and thought lines only, use sentence case (capitalize the first word, I, proper nouns, and acronyms; keep Sfx, "# ", and "* " as printed). Never use markdown, code fences, bullets, blank lines, or extra commentary. If no text is visible, output exactly "# NO TEXT DETECTED".';
+const SYSTEM_SHORT = 'You are an OCR text-extraction tool for comics, manhwa, manhua, and manga. Output ONLY the transcribed lines, one line per text element, using exactly one prefix per line: "() " speech, "[] " narration, "<> " thought, "* " in-world text, "Sfx " sound effects, "# " system/UI/meta including printed page numbers. One bubble or box becomes one line; never merge across bubbles. If two balloons touch, overlap, or share a border but have separate tails or speakers, split them into two lines with their own prefixes and insert one standalone "//" line between them as separator; never merge two speakers into one line. Copy printed text verbatim in the original language and script, including mature or offensive wording, without censoring, refusing, translating, or romanizing. For Latin-script speech, narration, and thought lines only, use sentence case (capitalize the first word, I, proper nouns, and acronyms; keep Sfx, "# ", and "* " as printed). Never use markdown, code fences, bullets, blank lines, or extra commentary. If no text is visible, output exactly "# NO TEXT DETECTED".';
 
 // =====================================================================
 // ============ TES KONEKSI / TEST  (POST /test) ========================
@@ -742,6 +752,7 @@ function normalizeOutput(text) {
     let l = raw.trim();
     if (!l) continue;
     if (/^(-{3,}|_{3,}|\*{4,}|={3,})$/.test(l)) continue; // horizontal rule
+    if (l === '//') { cleaned.push(l); continue; }       // pemisah balon gabungan: pertahankan apa adanya
     l = l.replace(/^>\s?(?!\s*$)/, (m) => (PREFIX_AT_START.test(l) ? m : '')); // blockquote murni
     l = l.replace(/^#{2,}\s+/, '# ');                      // ## Heading -> prefix #
     const startsWithPrefix = PREFIX_AT_START.test(l);
@@ -849,7 +860,7 @@ Pertahankan nama karakter, nama tempat, nama organisasi, gelar, sapaan, nama ski
 7. STRUKTUR FILE — WAJIB DIPERTAHANKAN PERSIS
 File ".txt" adalah acuan utama tata letak. Jangan membuat format baru dan jangan merapikan file menurut preferensimu.
 Penanda halaman: "P1", "P2", "P3", dan seterusnya dipertahankan posisinya, urutannya, dan jumlahnya. Jangan menambah, menghapus, memindahkan, menggabungkan halaman, atau menganggap P1 sebagai judul atau dialog.
-Penanda teks: pertahankan sesuai file asli, yaitu "-" dialog, "()" balon dialog, "Sfx" efek suara, "[]" kotak narasi, "#" sistem/status, "*" tulisan di luar balon, "**" tulisan kecil, "//" penanda khusus, "<>" tulisan pada kertas atau media lain. Jangan mengganti jenis, menghapus, atau memindahkan penanda.
+Penanda teks: pertahankan sesuai file asli, yaitu "-" dialog, "()" balon dialog, "Sfx" efek suara, "[]" kotak narasi, "#" sistem/status, "*" tulisan di luar balon, "**" tulisan kecil, "//" baris pemisah balon (berdiri sendiri, tanpa isi dialog): pertahankan posisinya; baris ini pemisah struktural, bukan isi yang disunting. "<>" tulisan pada kertas atau media lain. Jangan mengganti jenis, menghapus, atau memindahkan penanda.
 Baris dan posisi: pertahankan urutan baris, posisi dialog dan penanda, baris kosong, indentasi, dan spasi awal baris. Satu baris tetap satu baris; jangan menggabungkan, memecah, memindahkan, menambah, atau menghapus dialog. Jumlah dan susunan baris tidak berubah.
 Awal dan akhir baris: pertahankan penanda struktural di awal baris dan tanda baca penutupnya (elipsis, tanda tanya, tanda seru). Aturan ini tidak boleh menghalangi perbaikan typo di dalam kalimat; yang tidak boleh berubah hanya penandanya, bukan kata di dalamnya.
 Status window: pertahankan label, angka, statistik, satuan, nama skill dan trait, indentasi, dan urutan informasi. Hanya isi deskripsi yang boleh disunting bila perlu; jangan mengubah angka, durasi, jangkauan, biaya, atau efek.
@@ -936,7 +947,7 @@ Baris Sfx adalah onomatope. Terjemahkan ke padanan lazim dalam ejaan Indonesia b
 
 8. ANGKA, FORMAT, DAN PENANDA
 Angka, durasi, biaya, level, stat, dan waktu tidak boleh berubah nilainya. Jangan menambah elipsis, tanda baca, atau sapaan baru yang tidak ada di sumber, dan jangan mengubah tanda baca penutup seperti elipsis, tanda tanya, dan tanda seru.
-Penanda prefix OCR di awal baris — yaitu -, --, (), [], <>, *, **, //, #, dan Sfx — disalin persis beserta indentasinya di awal baris hasil terjemahan. Baris tanpa prefix tidak diberi prefix baru. Format sapaan "Nama: dialog" dipertahankan; namanya tetap dalam ejaan asli sesuai bahasa sumbernya, jangan dipaksakan ke bahasa Inggris atau Indonesia.
+Penanda prefix OCR di awal baris — yaitu -, --, (), [], <>, *, **, #, dan Sfx — disalin persis beserta indentasinya di awal baris hasil terjemahan. Baris yang isinya hanya "//" adalah pemisah balon (struktural): pertahankan posisinya apa adanya, jangan diterjemahkan dan jangan diberi prefix baru. Baris tanpa prefix tidak diberi prefix baru. Format sapaan "Nama: dialog" dipertahankan; namanya tetap dalam ejaan asli sesuai bahasa sumbernya, jangan dipaksakan ke bahasa Inggris atau Indonesia.
 
 9. BAGIAN RAGU
 Bila makna baris tidak yakin atau ada beberapa tafsir yang masuk akal, isi dengan tafsir terbaikmu lalu catat di "review" dengan alasan singkat. Jangan mengarang isi yang sama sekali tidak ada di sumber.`;
@@ -1070,11 +1081,15 @@ async function handleTranslate(request, env, origin) {
       if (!l || !Number.isInteger(l.n) || l.n < 1 || typeof l.t !== 'string' || l.t.length > MAX_EDIT_LINE_LEN) {
         return cors(json({ error: 'Format baris tidak valid.' }, 400), env, origin);
       }
+      if (l.t.trim() === '//') continue; // pemisah balon: struktural, tidak dikirim ke model
       total += l.t.length;
       clean.push({ n: l.n, t: l.t });
     }
     if (total > MAX_EDIT_CHARS) {
       return cors(json({ error: `Teks terlalu panjang (maks ${MAX_EDIT_CHARS} karakter per permintaan).` }, 413), env, origin);
+    }
+    if (!clean.length) {
+      return cors(json({ changes: [], review: [], provider, reqId: null }), env, origin);
     }
     const context = Array.isArray(body?.context)
       ? body.context.filter((s) => typeof s === 'string').slice(-20).map((s) => s.slice(0, MAX_EDIT_LINE_LEN))
@@ -1416,11 +1431,15 @@ async function handleEdit(request, env, origin) {
       if (!l || !Number.isInteger(l.n) || l.n < 1 || typeof l.t !== 'string' || l.t.length > MAX_EDIT_LINE_LEN) {
         return cors(json({ error: 'Format baris tidak valid.' }, 400), env, origin);
       }
+      if (l.t.trim() === '//') continue; // pemisah balon: struktural, tidak dikirim ke model
       total += l.t.length;
       clean.push({ n: l.n, t: l.t });
     }
     if (total > MAX_EDIT_CHARS) {
       return cors(json({ error: `Teks terlalu panjang (maks ${MAX_EDIT_CHARS} karakter per permintaan).` }, 413), env, origin);
+    }
+    if (!clean.length) {
+      return cors(json({ lines: [], glossary: [], review: [], provider, reqId: null }), env, origin);
     }
     const context = Array.isArray(body?.context)
       ? body.context.filter((s) => typeof s === 'string').slice(-20).map((s) => s.slice(0, MAX_EDIT_LINE_LEN))

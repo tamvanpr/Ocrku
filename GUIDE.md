@@ -194,6 +194,10 @@ atau klik **Pilih file .txt** (maks 2 MB; file dipecah di penanda halaman `P1`, 
 3. Hasil muncul sebagai file utuh — nomor halaman, baris kosong, dan baris Notes
    **tidak tersentuh**, penanda prefix OCR (`-`, `()`, `[]`, `<>`, `*`, `#`, `Sfx`)
    dipertahankan persis sehingga file hasil siap diteruskan ke Editor TL.
+   Balon yang menempel/bersinggungan tapi punya dua ekor atau dua pembicara dipisah
+   OCR menjadi dua baris dengan **baris pemisah `//`** di antaranya (baris `//` sendirian,
+   tanpa isi). Baris `//` ini struktural: tidak diterjemahkan/dikirim ke model Editor
+   maupun Terjemahan, dan posisinya dipertahankan apa adanya.
 4. **Kartu "Glosarium baru"**: istilah baru yang AI putuskan (tempat, gelar, item, skill)
    tampil dengan kotak centang; perbaiki kalimatnya bila perlu → **Simpan ke Glosarium**.
 5. **Kartu "Perlu dicek"**: baris ambigu, baris yang terjemahannya dibatalkan

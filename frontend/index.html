@@ -1551,7 +1551,7 @@ async function edProcess(from){
     const lines=[];
     for(let i=ch.a;i<ch.b;i++){
       const t=ed.orig[i];
-      if(!t.trim())continue;
+      if(!t.trim()||t.trim()==='//')continue; // baris pemisah balon: struktural, tidak dikirim ke model
       if(t.length>ED_LINE_MAX){if(!ed.review.some(r=>r.n===i+1))ed.review.push({n:i+1,text:t,issue:'Baris terlalu panjang (>'+ED_LINE_MAX+' karakter), tidak disunting otomatis.',suggestion:'Sunting manual.'});continue;}
       lines.push({n:i+1,t});
     }
@@ -1960,7 +1960,7 @@ async function trProcess(from){
     const lines=[];
     for(let i=ch.a;i<ch.b;i++){
       const t=tr.orig[i];
-      if(!t.trim())continue;
+      if(!t.trim()||t.trim()==='//')continue; // baris pemisah balon: struktural, tidak dikirim ke model
       if(t.length>ED_LINE_MAX){
         if(!tr.review.some(r=>r.n===i+1))tr.review.push({n:i+1,text:t,issue:'Baris terlalu panjang (>'+ED_LINE_MAX+' karakter), tidak diterjemahkan otomatis.',suggestion:'Terjemahkan manual.'});
         continue;
