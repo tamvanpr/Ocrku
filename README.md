@@ -59,7 +59,10 @@ ocr-studio/
   mengembalikan baris yang berubah, lalu aplikasi menempelkannya ke file asli. Jadi nomor halaman,
   jumlah baris, baris kosong, dan indentasi dijamin sama. Perubahan yang mengubah penanda awal baris,
   angka, tanda baca penutup (... ? !), nomor halaman, atau catatan TL/TN otomatis ditolak
-  dan dipindah ke "Perlu dicek".
+  dan dipindah ke "Perlu dicek". Aturan penyuntingannya mengikuti prompt editor milik pengguna
+  (seksi 0-10, aturan keras K1-K12, prioritas ATURAN KERAS > makna > typo > naturalitas > efisiensi,
+  larangan gue/lo/loe/elo, UJI WAJIB kata isi); format jawaban tiga bagian di file prompt itu
+  digantikan protokol JSON aplikasi.
 - Nomor baris di laporan "Perubahan" adalah nomor baris di file asli (mulai dari 1).
 - **Terjemahan (tab Terjemahan)**: input seperti Editor TL; sumber EN/CH/KR/JP → Bahasa Indonesia dengan register formal/informal, **romanisasi hanya untuk teks EN** (istilah CH/KR/JP tetap ejaan aslinya, kecuali user menetapkan lewat Glosarium), prefix OCR & halaman & baris Notes dipertahankan utuh, angka berubah → masuk "Perlu dicek". Endpoint `/translate` di Worker.
 - **Glosarium**: tersimpan di Supabase (`SUPABASE_URL` + `SUPABASE_SERVICE_KEY`; SQL setup di GUIDE.md), fallback otomatis ke penyimpanan browser bila belum dikonfigurasi. Mendukung tambah/hapus/cari, simpan istilah hasil terjemahan, impor/ekspor JSON & CSV. Di aplikasi, kini ada tab **Glosarium** khusus; kartu "Glosarium baru" khusus (dari hasil Terjemahan) tetap muncul di tab Terjemahan setelah menjalankan **Terjemahkan**.
