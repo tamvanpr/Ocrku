@@ -27,6 +27,7 @@ try{
   --on-ink:#ffffff; --toast-bg:#1c1b19; --toast-ink:#ffffff;
   --overlay:rgba(28,27,25,.45); --app-shadow:0 1px 2px rgba(28,27,25,.04),0 8px 30px rgba(28,27,25,.05);
   --badge-warn-bg:#fff3d6; --badge-warn-ink:#7a5200; --diff-orig:#fff6dc;
+  --del-bg:#f2c4bf; --add-bg:#cdeeda;
   --radius:14px; --radius-sm:9px;
   --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
   --mono:ui-monospace,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace;
@@ -42,6 +43,7 @@ html[data-theme="dark"]{
   --on-ink:#171614; --toast-bg:#ece9e2; --toast-ink:#171614;
   --overlay:rgba(0,0,0,.6); --app-shadow:0 1px 2px rgba(0,0,0,.35),0 10px 32px rgba(0,0,0,.45);
   --badge-warn-bg:#3a2e11; --badge-warn-ink:#e6c26a; --diff-orig:#352b10;
+  --del-bg:#5e2b27; --add-bg:#1d4030;
 }
 ::selection{background:var(--accent-soft)}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -301,6 +303,10 @@ button:focus:not(:focus-visible){outline:none}
 .diff .tx.after{background:var(--accent-soft)}
 .diff .tx.orig{background:var(--diff-orig)}
 .diff .why{color:var(--ink-2)}
+.diff .tx .w-del{background:var(--del-bg);border-radius:4px;padding:0 2px}
+.diff .tx .w-add{background:var(--add-bg);border-radius:4px;padding:0 2px}
+.diff-hint{font-size:11.5px;color:var(--ink-3);margin:2px 0 6px}
+.ocr-result .l-chg{background:var(--accent-soft);border-radius:4px}
 .empty-note{font-size:13px;color:var(--ink-3)}
 @media(max-width:560px){
   .tabbar{padding:6px 8px;gap:3px}
@@ -421,9 +427,11 @@ body.sheet-open{overflow:hidden}
           <button class="btn primary" id="edDl" type="button"></button>
         </div>
         <div class="meta-row" id="edMeta"></div>
+        <div class="diff-hint" id="edOutHint" hidden>Baris yang disorot diubah oleh editor TL.</div>
       </div>
       <div class="card" style="margin-bottom:12px">
         <h2>Perubahan <span class="badge" id="edChgBadge">0</span></h2>
+        <div class="diff-hint" id="edDiffHint" hidden>Sorot pada "Sebelum" dan "Sesudah" = bagian teks yang berubah.</div>
         <div class="list-scroll" id="edChanges"></div>
         <div class="action-row"><button class="btn" id="edCopyReport" type="button"></button></div>
       </div>
@@ -1616,6 +1624,45 @@ function edStructureOk(){
   }
   return true;
 }
+/* ---------- diff kata-per-kata (LCS) untuk kartu Perubahan ---------- */
+function diffTokens(a,b){
+  const tok=s=>s.match(/\s+|\S+/g)||[];
+  const A=tok(a),B=tok(b);
+  if(!A.length||!B.length||A.length>400||B.length>400)return null;
+  const n=A.length,m=B.length,dp=[];
+  for(let i=0;i<=n;i++)dp.push(new Uint16Array(m+1));
+  for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)
+    dp[i][j]=A[i]===B[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
+  const ops=[];let i=0,j=0;
+  while(i<n&&j<m){
+    if(A[i]===B[j]){ops.push(0,A[i]);i++;j++;}
+    else if(dp[i+1][j]>=dp[i][j+1]){ops.push(-1,A[i]);i++;}
+    else{ops.push(1,B[j]);j++;}
+  }
+  while(i<n)ops.push(-1,A[i++]);
+  while(j<m)ops.push(1,B[j++]);
+  return ops;
+}
+/* isi container dengan teks + penanda: side 'before' menandai yang dihapus (w-del),
+   side 'after' menandai yang ditambah (w-add); teks tak berubah tetap polos. */
+function diffText(container,text,side,ops){
+  if(!ops){container.textContent=text;return;}
+  let cur=null,buf='';
+  const flush=()=>{
+    if(cur===null)return;
+    if(cur===0)container.append(document.createTextNode(buf));
+    else{const s=el('span',cur<0?'w-del':'w-add');s.textContent=buf;container.append(s);}
+    cur=null;buf='';
+  };
+  for(let k=0;k<ops.length;k+=2){
+    const t=ops[k],v=ops[k+1];
+    if(side==='before'?t>0:t<0){flush();continue;}
+    const type=t===0?0:t;
+    if(cur!==type){flush();cur=type;}
+    buf+=v;
+  }
+  flush();
+}
 function edReport(){
   const parts=[];
   parts.push('PERUBAHAN\n');
@@ -1630,13 +1677,26 @@ function edRender(){
   if(!ed.orig.length)return;
   edResults.hidden=false;
   const text=ed.out.join(ed.eol);
-  const out=$('edOut');out.textContent=text;out.dataset.full=text;
+  const out=$('edOut');out.textContent='';
+  if(ed.changes.length){
+    /* sorot baris yang berubah langsung di Hasil */
+    const changed=new Set(ed.changes.map(c=>c.n));
+    const frag=document.createDocumentFragment();
+    ed.out.forEach((l,i)=>{
+      if(changed.has(i+1)){const s=el('span','l-chg');s.textContent=l==null?'':l;frag.append(s);}
+      else frag.append(l==null?'':l);
+      if(i<ed.out.length-1)frag.append('\n');
+    });
+    out.appendChild(frag);
+  }else out.textContent=text;
+  out.dataset.full=text;
   const complete=ed.next>=ed.chunks.length;
   $('edOutBadge').textContent=complete?'lengkap':'sebagian: bagian 1–'+ed.next+' dari '+ed.chunks.length;
   $('edOutBadge').className='badge'+(complete?'':' warn');
   const pages=ed.orig.filter(l=>PAGE_RE.test(l)).length;
   $('edMeta').textContent=[...ed.providers].join(' + ')+' · '+ed.orig.length+' baris'+(pages?' · '+pages+' halaman':'')+
     (edStructureOk()?' · struktur sama dengan file asli ✓':' · struktur berbeda dari file asli');
+  $('edOutHint').hidden=!ed.changes.length;
   const copy=$('edCopy'),dl=$('edDl'),rep=$('edCopyReport');
   if(!copy.dataset.label){
     [[copy,'Salin hasil',ICON.copy],[dl,'Unduh .txt',ICON.down],[rep,'Salin laporan',ICON.copy]].forEach(([b,l,ic])=>{b.innerHTML='<span style="display:inline-flex">'+ic+'</span><span>'+l+'</span>';b.dataset.label=l;});
@@ -1645,12 +1705,17 @@ function edRender(){
     rep.onclick=()=>copyText(edReport(),rep);
   }
   $('edChgBadge').textContent=ed.changes.length;
+  $('edDiffHint').hidden=!ed.changes.length;
   const cl=$('edChanges');cl.textContent='';
   if(!ed.changes.length)cl.appendChild(el('div','empty-note','Tidak ada perubahan.'));
   ed.changes.slice().sort((a,b)=>a.n-b.n).forEach(c=>{
     const d=el('div','diff');
-    d.append(el('div','loc',edLoc(c.n)),el('div','lbl','Sebelum'),el('div','tx before',c.before),
-      el('div','lbl','Sesudah'),el('div','tx after',c.after),el('div','why',c.reason));
+    const ops=diffTokens(c.before,c.after);
+    const bRow=el('div','tx before'),aRow=el('div','tx after');
+    diffText(bRow,c.before,'before',ops);
+    diffText(aRow,c.after,'after',ops);
+    d.append(el('div','loc',edLoc(c.n)),el('div','lbl','Sebelum'),bRow,
+      el('div','lbl','Sesudah'),aRow,el('div','why',c.reason));
     cl.appendChild(d);
   });
   $('edRevBadge').textContent=ed.review.length;

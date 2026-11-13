@@ -59,7 +59,9 @@ ocr-studio/
   mengembalikan baris yang berubah, lalu aplikasi menempelkannya ke file asli. Jadi nomor halaman,
   jumlah baris, baris kosong, dan indentasi dijamin sama. Perubahan yang mengubah penanda awal baris,
   angka, tanda baca penutup (... ? !), nomor halaman, atau catatan TL/TN otomatis ditolak
-  dan dipindah ke "Perlu dicek". Aturan penyuntingannya mengikuti prompt editor milik pengguna
+  dan dipindah ke "Perlu dicek". Kartu "Perubahan" menampilkan sorot langsung pada bagian
+  teks yang berubah di "Sebelum" dan "Sesudah" (tanpa coret), dan baris yang berubah ikut
+  disorot pada kartu "Hasil". Aturan penyuntingannya mengikuti prompt editor milik pengguna
   (seksi 0-10, aturan keras K1-K12, prioritas ATURAN KERAS > makna > typo > naturalitas > efisiensi,
   larangan gue/lo/loe/elo, UJI WAJIB kata isi); format jawaban tiga bagian di file prompt itu
   digantikan protokol JSON aplikasi.
